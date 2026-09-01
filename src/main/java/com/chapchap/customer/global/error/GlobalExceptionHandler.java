@@ -1,8 +1,8 @@
 package com.chapchap.customer.global.error;
 
-import com.chapchap.auth.global.error.custom.BusinessException;
-import com.chapchap.auth.global.response.GlobalResponse;
-import com.chapchap.auth.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.BusinessException;
+import com.chapchap.customer.global.response.GlobalResponse;
+import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
@@ -50,7 +50,7 @@ public class GlobalExceptionHandler {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // 로그인하지 않은 익명 사용자가 접근한 경우 (인증 실패 - 401)
-        if (authentication instanceof AnonymousAuthenticationToken) {
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             return this.generateErrorResponse(CustomResponseCode.UNAUTHENTICATED_ERROR); // E02
         }
 
