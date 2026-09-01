@@ -4,7 +4,7 @@ services:
     container_name: chapchap-customer-mysql
 
     ports:
-      - "3306:3306"
+      - "3307:3307"
 
     environment:
       MYSQL_DATABASE: customer_db
