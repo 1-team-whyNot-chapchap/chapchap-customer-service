@@ -42,6 +42,7 @@ public class SecurityConfiguration {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/customer/faqs", "/api/customer/faqs/**").permitAll()
+                        .requestMatchers("/ws/customer/consultations/**").authenticated()
                         .requestMatchers("/api/customer/**").authenticated()
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptionHandling -> exceptionHandling

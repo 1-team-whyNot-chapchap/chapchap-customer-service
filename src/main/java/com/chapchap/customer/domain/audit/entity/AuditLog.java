@@ -62,13 +62,15 @@ public class AuditLog {
             AuditActionType actionType,
             String targetId,
             String traceId,
+            AuditActorType actorType,
+            AuditTargetType targetType,
             Map<String, Object> detail,
             LocalDateTime createdAt
     ) {
         this.actorUserId = actorUserId;
-        this.actorType = AuditActorType.ADMIN;
+        this.actorType = actorType;
         this.actionType = actionType;
-        this.targetType = AuditTargetType.FAQ;
+        this.targetType = targetType;
         this.targetId = targetId;
         this.result = AuditResult.SUCCESS;
         this.traceId = traceId;
@@ -84,7 +86,12 @@ public class AuditLog {
             Map<String, Object> detail,
             LocalDateTime createdAt
     ) {
-        return new AuditLog(actorUserId, actionType, targetId, traceId, detail, createdAt);
+        return new AuditLog(actorUserId, actionType, targetId, traceId, AuditActorType.ADMIN, AuditTargetType.FAQ, detail, createdAt);
+    }
+
+    public static AuditLog consultationChange(Long actorUserId, AuditActionType actionType, String targetId,
+                                              String traceId, AuditActorType actorType, Map<String, Object> detail, LocalDateTime createdAt) {
+        return new AuditLog(actorUserId, actionType, targetId, traceId, actorType, AuditTargetType.CONSULTATION, detail, createdAt);
     }
 
     public Long getActorUserId() {

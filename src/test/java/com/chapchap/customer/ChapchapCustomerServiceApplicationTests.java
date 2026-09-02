@@ -203,6 +203,24 @@ class ChapchapCustomerServiceApplicationTests {
     }
 
     @Test
+    void rejectsAdminRoleFromUserAdminHandoffEndpoint() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations/1/admin-handoffs")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "ADMIN"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void rejectsCustomerRoleFromAdminConsultationEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/admin/consultations")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
     void validatesBlankConsultationContentBeforeServiceCall() throws Exception {
         mockMvc.perform(post("/api/customer/consultations")
                         .header(USER_ID_HEADER, "1")
@@ -218,7 +236,9 @@ class ChapchapCustomerServiceApplicationTests {
         mockMvc.perform(get("/api-docs"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("/api/customer/faqs")))
-                .andExpect(content().string(containsString("/api/customer/consultations")));
+                .andExpect(content().string(containsString("/api/customer/consultations")))
+                .andExpect(content().string(containsString("/admin-handoffs")))
+                .andExpect(content().string(containsString("/api/customer/admin/consultations")));
     }
 
     @TestConfiguration(proxyBeanMethods = false)

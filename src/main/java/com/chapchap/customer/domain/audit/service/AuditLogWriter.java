@@ -1,9 +1,11 @@
 package com.chapchap.customer.domain.audit.service;
 
 import com.chapchap.customer.domain.audit.entity.AuditActionType;
+import com.chapchap.customer.domain.audit.entity.AuditActorType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.faq.entity.Faq;
+import com.chapchap.customer.domain.consultation.entity.Consultation;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
@@ -57,6 +59,20 @@ public class AuditLogWriter {
         ));
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordConsultationEscalated(Long actorUserId, Consultation consultation, String beforeStatus, LocalDateTime now) {
+        auditLogRepository.save(AuditLog.consultationChange(actorUserId, AuditActionType.CONSULTATION_ESCALATED,
+                String.valueOf(consultation.getId()), MDC.get(TRACE_ID_KEY), AuditActorType.USER,
+                consultationDetail(beforeStatus, consultation), now));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordConsultationAccepted(Long actorUserId, Consultation consultation, String beforeStatus, LocalDateTime now) {
+        auditLogRepository.save(AuditLog.consultationChange(actorUserId, AuditActionType.CONSULTATION_ACCEPTED,
+                String.valueOf(consultation.getId()), MDC.get(TRACE_ID_KEY), AuditActorType.ADMIN,
+                consultationDetail(beforeStatus, consultation), now));
+    }
+
     private Map<String, Object> changeDetail(Faq before, Faq after) {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("before", before == null ? null : snapshot(before));
@@ -73,5 +89,17 @@ public class AuditLogWriter {
         snapshot.put("published", faq.isPublished());
         snapshot.put("active", faq.isActive());
         return snapshot;
+    }
+
+    private Map<String, Object> consultationDetail(String beforeStatus, Consultation consultation) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("before", Map.of("status", beforeStatus));
+        Map<String, Object> after = new LinkedHashMap<>();
+        after.put("status", consultation.getStatus().name());
+        after.put("assignedAdminId", consultation.getAssignedAdminId());
+        after.put("escalatedAt", consultation.getEscalatedAt());
+        after.put("assignedAt", consultation.getAssignedAt());
+        detail.put("after", after);
+        return detail;
     }
 }

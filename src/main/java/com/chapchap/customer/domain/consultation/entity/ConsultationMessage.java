@@ -49,9 +49,16 @@ public class ConsultationMessage {
     protected ConsultationMessage() {
     }
 
-    private ConsultationMessage(Consultation consultation, Long senderUserId, String content, int sequenceNo, LocalDateTime now) {
+    private ConsultationMessage(
+            Consultation consultation,
+            ConsultationSenderType senderType,
+            Long senderUserId,
+            String content,
+            int sequenceNo,
+            LocalDateTime now
+    ) {
         this.consultation = consultation;
-        this.senderType = ConsultationSenderType.USER;
+        this.senderType = senderType;
         this.senderUserId = senderUserId;
         this.content = content;
         this.sequenceNo = sequenceNo;
@@ -64,7 +71,18 @@ public class ConsultationMessage {
             String content,
             LocalDateTime now
     ) {
-        return new ConsultationMessage(consultation, userId, content, 1, now);
+        return new ConsultationMessage(consultation, ConsultationSenderType.USER, userId, content, 1, now);
+    }
+
+    public static ConsultationMessage create(
+            Consultation consultation,
+            ConsultationSenderType senderType,
+            Long senderUserId,
+            String content,
+            int sequenceNo,
+            LocalDateTime now
+    ) {
+        return new ConsultationMessage(consultation, senderType, senderUserId, content, sequenceNo, now);
     }
 
     public Long getId() {
