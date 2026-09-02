@@ -36,6 +36,14 @@ public class ConsultationController {
         return GlobalResponse.success(consultationService.createConsultation(requireUserId(principal), request));
     }
 
+    @PostMapping("/{consultationId}/admin-handoffs")
+    public ResponseEntity<GlobalResponse<ConsultationResponse>> requestAdminHandoff(
+            @AuthenticationPrincipal GatewayUserPrincipal principal,
+            @PathVariable Long consultationId
+    ) {
+        return GlobalResponse.success(consultationService.requestAdminHandoff(requireUserId(principal), consultationId));
+    }
+
     @GetMapping("/{consultationId}")
     public ResponseEntity<GlobalResponse<ConsultationResponse>> findMyConsultation(
             @AuthenticationPrincipal GatewayUserPrincipal principal,

@@ -67,6 +67,19 @@ public class Consultation {
         return new Consultation(userId, now);
     }
 
+    public boolean requestAdminHandoff(LocalDateTime now) {
+        if (status == ConsultationStatus.WAITING_ADMIN) {
+            return false;
+        }
+        if (status != ConsultationStatus.AI_HANDLING) {
+            throw new IllegalStateException("관리자 상담으로 전환할 수 없는 상태입니다.");
+        }
+        status = ConsultationStatus.WAITING_ADMIN;
+        escalatedAt = now;
+        updatedAt = now;
+        return true;
+    }
+
     public Long getId() {
         return id;
     }
@@ -77,6 +90,18 @@ public class Consultation {
 
     public ConsultationStatus getStatus() {
         return status;
+    }
+
+    public Long getAssignedAdminId() {
+        return assignedAdminId;
+    }
+
+    public LocalDateTime getEscalatedAt() {
+        return escalatedAt;
+    }
+
+    public LocalDateTime getAssignedAt() {
+        return assignedAt;
     }
 
     public LocalDateTime getCreatedAt() {
