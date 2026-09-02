@@ -24,6 +24,7 @@ public class SecurityConfiguration {
     public SecurityFilterChain filterChain(
             HttpSecurity httpSecurity,
             TraceIdFilter traceIdFilter,
+            GatewayUserContextFilter gatewayUserContextFilter,
             ObjectMapper objectMapper
     ) throws Exception {
         return httpSecurity
@@ -32,12 +33,14 @@ public class SecurityConfiguration {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(gatewayUserContextFilter, TraceIdFilter.class)
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(
                                 "/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        .requestMatchers("/api/customer/**").authenticated()
                         .anyRequest().denyAll())
                 .exceptionHandling(exceptionHandling -> exceptionHandling
                         .authenticationEntryPoint((request, response, exception) ->

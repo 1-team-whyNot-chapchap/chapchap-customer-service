@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: chapchap-customer-service
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
   servlet:
     multipart:
       max-file-size: 10MB
