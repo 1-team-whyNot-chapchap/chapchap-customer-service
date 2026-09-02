@@ -3,7 +3,10 @@ package com.chapchap.customer;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
+import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
 import com.chapchap.customer.domain.faq.repository.FaqRepository;
+import com.chapchap.customer.domain.notification.repository.NotificationReadRepository;
+import com.chapchap.customer.domain.notification.repository.NotificationRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -266,6 +269,21 @@ class ChapchapCustomerServiceApplicationTests {
         @Bean
         ConsultationMessageRepository consultationMessageRepository() {
             return mock(ConsultationMessageRepository.class);
+        }
+
+        @Bean
+        CsReadModelRepository csReadModelRepository() {
+            return mock(CsReadModelRepository.class);
+        }
+
+        @Bean
+        NotificationRepository notificationRepository() {
+            return mock(NotificationRepository.class);
+        }
+
+        @Bean
+        NotificationReadRepository notificationReadRepository() {
+            return mock(NotificationReadRepository.class);
         }
     }
 
