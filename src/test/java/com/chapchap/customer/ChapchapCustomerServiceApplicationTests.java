@@ -1,5 +1,7 @@
 package com.chapchap.customer;
 
+import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
+import com.chapchap.customer.domain.faq.repository.FaqRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -23,10 +25,13 @@ import java.security.Principal;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.mock;
+import static org.hamcrest.Matchers.containsString;
 
-@SpringBootTest
+@SpringBootTest(properties = "springdoc.api-docs.path=/api-docs")
 @Import(ChapchapCustomerServiceApplicationTests.SecurityProbeConfiguration.class)
 class ChapchapCustomerServiceApplicationTests {
     private static final String USER_ID_HEADER = "X-User-Id";
@@ -87,15 +92,39 @@ class ChapchapCustomerServiceApplicationTests {
     }
 
     @Test
-    void rejectsMultipleValuesForTrustedHeaders() throws Exception {
+    void rejectsNonNumericUserId() throws Exception {
         mockMvc.perform(get("/api/customer/security-probe/authenticated")
-                        .header(USER_ID_HEADER, "customer-1", "customer-2")
+                        .header(USER_ID_HEADER, "customer-1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsNonPositiveUserId() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "0")
                         .header(USER_ROLE_HEADER, "CUSTOMER"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("E03"));
 
         mockMvc.perform(get("/api/customer/security-probe/authenticated")
-                        .header(USER_ID_HEADER, "customer-1")
+                        .header(USER_ID_HEADER, "-1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsMultipleValuesForTrustedHeaders() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1", "2")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1")
                         .header(USER_ROLE_HEADER, "CUSTOMER", "ADMIN"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.code").value("E03"));
@@ -105,16 +134,16 @@ class ChapchapCustomerServiceApplicationTests {
     @ValueSource(strings = {"CUSTOMER", "RIDER", "ADMIN", "SUPER_ADMIN"})
     void acceptsEveryGatewayRole(String role) throws Exception {
         mockMvc.perform(get("/api/customer/security-probe/authenticated")
-                        .header(USER_ID_HEADER, "principal-1")
+                        .header(USER_ID_HEADER, "1")
                         .header(USER_ROLE_HEADER, role))
                 .andExpect(status().isOk())
-                .andExpect(content().string("principal-1"));
+                .andExpect(content().string("1"));
     }
 
     @Test
     void rejectsNonAdminRoleFromAdminEndpoint() throws Exception {
         mockMvc.perform(get("/api/customer/security-probe/admin")
-                        .header(USER_ID_HEADER, "customer-1")
+                        .header(USER_ID_HEADER, "1")
                         .header(USER_ROLE_HEADER, "CUSTOMER"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.code").value("E04"));
@@ -123,9 +152,39 @@ class ChapchapCustomerServiceApplicationTests {
     @Test
     void allowsAdminRoleToAdminEndpoint() throws Exception {
         mockMvc.perform(get("/api/customer/security-probe/admin")
-                        .header(USER_ID_HEADER, "admin-1")
+                        .header(USER_ID_HEADER, "1")
                         .header(USER_ROLE_HEADER, "ADMIN"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsSuperAdminRoleToAdminEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/admin")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "SUPER_ADMIN"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsAnonymousRequestToPublicFaqEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/faqs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("00"))
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void doesNotAllowAnonymousWriteRequestOnPublicFaqPath() throws Exception {
+        mockMvc.perform(post("/api/customer/faqs"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void publishesFaqApiInOpenApiDocument() throws Exception {
+        mockMvc.perform(get("/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/api/customer/faqs")));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -133,6 +192,16 @@ class ChapchapCustomerServiceApplicationTests {
         @Bean
         SecurityProbeController securityProbeController() {
             return new SecurityProbeController();
+        }
+
+        @Bean
+        FaqRepository faqRepository() {
+            return mock(FaqRepository.class);
+        }
+
+        @Bean
+        AuditLogRepository auditLogRepository() {
+            return mock(AuditLogRepository.class);
         }
     }
 
@@ -144,7 +213,7 @@ class ChapchapCustomerServiceApplicationTests {
             return principal.getName();
         }
 
-        @PreAuthorize("hasRole('ADMIN')")
+        @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
         @GetMapping("/admin")
         String admin() {
             return "admin";
