@@ -18,11 +18,13 @@ import java.io.IOException;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Component
 public class GatewayUserContextFilter extends OncePerRequestFilter {
     static final String USER_ID_HEADER = "X-User-Id";
     static final String USER_ROLE_HEADER = "X-User-Role";
+    private static final Pattern POSITIVE_NUMERIC_USER_ID = Pattern.compile("[1-9][0-9]*");
 
     @Override
     protected void doFilterInternal(
@@ -40,7 +42,8 @@ public class GatewayUserContextFilter extends OncePerRequestFilter {
         String userId = getSingleHeader(request, USER_ID_HEADER);
         String roleName = getSingleHeader(request, USER_ROLE_HEADER);
 
-        if (userId == null || userId.isBlank() || roleName == null || roleName.isBlank()) {
+        if (userId == null || userId.isBlank() || !isNumericUserId(userId)
+                || roleName == null || roleName.isBlank()) {
             return Optional.empty();
         }
 
@@ -59,6 +62,18 @@ public class GatewayUserContextFilter extends OncePerRequestFilter {
 
         String headerValue = headers.nextElement();
         return headers.hasMoreElements() ? null : headerValue;
+    }
+
+    private boolean isNumericUserId(String userId) {
+        if (!POSITIVE_NUMERIC_USER_ID.matcher(userId).matches()) {
+            return false;
+        }
+
+        try {
+            return Long.parseLong(userId) > 0;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
     }
 
     private void setAuthentication(GatewayUserPrincipal principal) {
