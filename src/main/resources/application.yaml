@@ -34,6 +34,25 @@ spring:
     listener:
       ack-mode: record
 
+customer:
+  kafka:
+    topics:
+      payment: subscription.payment-events.v1
+      refund: subscription.refund-events.v1
+      subscription-notification: subscription.customer-notification-events.v1
+      subscription: subscription.subscription-events.v1
+      delivery-address: subscription.delivery-address-events.v1
+      delivery: delivery.delivery-events.v1
+      delivery-operation-notification: delivery.operation-notification-requests.v1
+    groups:
+      payment: customer-service-payment-group
+      refund: customer-service-refund-group
+      subscription-notification: customer-service-subscription-notification-group
+      subscription: customer-service-subscription-group
+      delivery-address: customer-service-delivery-address-group
+      delivery: customer-service-delivery-group
+      delivery-operation-notification: customer-service-delivery-operation-notification-group
+
 springdoc:
   default-consumes-media-type: application/json
   default-produces-media-type: application/json
