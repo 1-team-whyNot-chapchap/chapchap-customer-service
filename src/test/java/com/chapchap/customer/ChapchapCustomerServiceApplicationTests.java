@@ -1,6 +1,8 @@
 package com.chapchap.customer;
 
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
+import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
+import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
 import com.chapchap.customer.domain.faq.repository.FaqRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -181,10 +183,42 @@ class ChapchapCustomerServiceApplicationTests {
     }
 
     @Test
+    void rejectsConsultationCreationWithoutTrustedUserHeaders() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"상담을 시작합니다.\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsAdminRoleFromConsultationCoreEndpoints() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"상담을 시작합니다.\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void validatesBlankConsultationContentBeforeServiceCall() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("E21"));
+    }
+
+    @Test
     void publishesFaqApiInOpenApiDocument() throws Exception {
         mockMvc.perform(get("/api-docs"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(containsString("/api/customer/faqs")));
+                .andExpect(content().string(containsString("/api/customer/faqs")))
+                .andExpect(content().string(containsString("/api/customer/consultations")));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -202,6 +236,16 @@ class ChapchapCustomerServiceApplicationTests {
         @Bean
         AuditLogRepository auditLogRepository() {
             return mock(AuditLogRepository.class);
+        }
+
+        @Bean
+        ConsultationRepository consultationRepository() {
+            return mock(ConsultationRepository.class);
+        }
+
+        @Bean
+        ConsultationMessageRepository consultationMessageRepository() {
+            return mock(ConsultationMessageRepository.class);
         }
     }
 
