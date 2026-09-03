@@ -1,6 +1,7 @@
 package com.chapchap.customer.domain.knowledge.processing;
 
 import com.chapchap.customer.global.config.CustomerAiKnowledgeProcessingProperties;
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeProcessingContractException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;

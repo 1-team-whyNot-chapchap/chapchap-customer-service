@@ -1,5 +1,6 @@
 package com.chapchap.customer.domain.knowledge.entity;
 
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeVersionStateException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -153,7 +154,7 @@ public class KnowledgeVersion {
 
     public void activate(LocalDateTime now) {
         if (!canActivateAt(now)) {
-            throw new IllegalStateException("시행 가능한 READY Knowledge Version만 활성화할 수 있습니다.");
+            throw new KnowledgeVersionStateException("시행 가능한 READY Knowledge Version만 활성화할 수 있습니다.");
         }
 
         active = true;
@@ -170,7 +171,7 @@ public class KnowledgeVersion {
         if (processingStatus == KnowledgeProcessingStatus.READY
                 || processingStatus == KnowledgeProcessingStatus.FAILED
                 || processingAttemptCount >= MAX_PROCESSING_ATTEMPTS) {
-            throw new IllegalStateException("처리할 수 없는 Knowledge Version 상태입니다.");
+            throw new KnowledgeVersionStateException("처리할 수 없는 Knowledge Version 상태입니다.");
         }
 
         processingStatus = KnowledgeProcessingStatus.PROCESSING;
@@ -182,7 +183,7 @@ public class KnowledgeVersion {
 
     public void completeProcessing(LocalDateTime now) {
         if (processingStatus != KnowledgeProcessingStatus.PROCESSING) {
-            throw new IllegalStateException("PROCESSING 상태의 Knowledge Version만 완료할 수 있습니다.");
+            throw new KnowledgeVersionStateException("PROCESSING 상태의 Knowledge Version만 완료할 수 있습니다.");
         }
 
         processingStatus = KnowledgeProcessingStatus.READY;

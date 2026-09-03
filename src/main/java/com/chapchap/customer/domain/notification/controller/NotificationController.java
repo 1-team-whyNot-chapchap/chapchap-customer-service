@@ -3,13 +3,12 @@ package com.chapchap.customer.domain.notification.controller;
 import com.chapchap.customer.domain.notification.response.NotificationResponse;
 import com.chapchap.customer.domain.notification.service.CustomerNotificationSseService;
 import com.chapchap.customer.domain.notification.service.NotificationService;
-import com.chapchap.customer.global.error.custom.BusinessException;
 import com.chapchap.customer.global.response.GlobalResponse;
-import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -62,12 +61,12 @@ public class NotificationController {
 
     private Long requireUserId(GatewayUserPrincipal principal) {
         if (principal == null) {
-            throw new BusinessException(CustomResponseCode.UNAUTHENTICATED_ERROR, "인증 정보가 없습니다.");
+            throw new AccessDeniedException("인증 정보가 없습니다.");
         }
         try {
             return Long.parseLong(principal.userId());
         } catch (NumberFormatException exception) {
-            throw new BusinessException(CustomResponseCode.UNAUTHENTICATED_ERROR, "유효하지 않은 사용자 ID입니다.");
+            throw new AccessDeniedException("유효하지 않은 사용자 ID입니다.");
         }
     }
 }

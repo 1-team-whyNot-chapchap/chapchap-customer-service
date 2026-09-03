@@ -9,8 +9,7 @@ import com.chapchap.customer.domain.knowledge.repository.KnowledgeDocumentReposi
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
 import com.chapchap.customer.domain.knowledge.request.KnowledgeVersionRegisterRequest;
 import com.chapchap.customer.domain.knowledge.response.KnowledgeVersionResponse;
-import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeVersionDuplicateException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -45,7 +44,7 @@ public class KnowledgeRegistrationPersistenceService {
                 )));
 
         if (knowledgeVersionRepository.existsByKnowledgeDocumentIdAndVersion(knowledgeDocument.getId(), request.getVersion())) {
-            throw new BusinessException(CustomResponseCode.DUPLICATED_RESOURCE_ERROR, "같은 Knowledge Version이 이미 등록되어 있습니다.");
+            throw new KnowledgeVersionDuplicateException();
         }
 
         KnowledgeVersion knowledgeVersion = knowledgeVersionRepository.save(KnowledgeVersion.uploaded(

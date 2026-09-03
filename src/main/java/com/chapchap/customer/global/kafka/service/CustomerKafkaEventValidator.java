@@ -1,7 +1,7 @@
 package com.chapchap.customer.global.kafka.service;
 
 import com.chapchap.customer.global.kafka.event.CustomerKafkaEvent;
-import com.chapchap.customer.global.kafka.exception.KafkaContractException;
+import com.chapchap.customer.global.error.custom.kafka.KafkaContractException;
 import org.springframework.stereotype.Component;
 
 import java.time.OffsetDateTime;

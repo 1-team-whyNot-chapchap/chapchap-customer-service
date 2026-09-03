@@ -6,6 +6,7 @@ import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeDocumentRepository;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeProcessingStateException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,17 +23,17 @@ public class KnowledgeActivationService {
     @Transactional
     public boolean activateIfDue(Long knowledgeVersionId, LocalDateTime now) {
         KnowledgeVersion target = knowledgeVersionRepository.findById(knowledgeVersionId)
-                .orElseThrow(() -> new IllegalArgumentException("Knowledge Version을 찾을 수 없습니다."));
+                .orElseThrow(() -> new KnowledgeProcessingStateException("Knowledge Version을 찾을 수 없습니다."));
 
         if (!target.canActivateAt(now)) {
             return false;
         }
 
         KnowledgeDocument document = knowledgeDocumentRepository.findById(target.getKnowledgeDocumentId())
-                .orElseThrow(() -> new IllegalArgumentException("Knowledge 문서를 찾을 수 없습니다."));
+                .orElseThrow(() -> new KnowledgeProcessingStateException("Knowledge 문서를 찾을 수 없습니다."));
 
         KnowledgeVersion lockedTarget = knowledgeVersionRepository.findById(target.getId())
-                .orElseThrow(() -> new IllegalArgumentException("Knowledge Version을 찾을 수 없습니다."));
+                .orElseThrow(() -> new KnowledgeProcessingStateException("Knowledge Version을 찾을 수 없습니다."));
         if (!lockedTarget.canActivateAt(now)) {
             return false;
         }
@@ -43,7 +44,7 @@ public class KnowledgeActivationService {
                         KnowledgeProcessingStatus.READY,
                         now
                 )
-                .orElseThrow(() -> new IllegalStateException("시행 가능한 READY Knowledge Version을 찾을 수 없습니다."));
+                .orElseThrow(() -> new KnowledgeProcessingStateException("시행 가능한 READY Knowledge Version을 찾을 수 없습니다."));
         if (!preferredVersion.getId().equals(lockedTarget.getId())) {
             return false;
         }

@@ -1,5 +1,6 @@
 package com.chapchap.customer.domain.consultation.entity;
 
+import com.chapchap.customer.global.error.custom.consultation.ConsultationStateException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -72,7 +73,7 @@ public class Consultation {
             return false;
         }
         if (status != ConsultationStatus.AI_HANDLING) {
-            throw new IllegalStateException("관리자 상담으로 전환할 수 없는 상태입니다.");
+            throw new ConsultationStateException("관리자 상담으로 전환할 수 없는 상태입니다.");
         }
         status = ConsultationStatus.WAITING_ADMIN;
         escalatedAt = now;

@@ -1,7 +1,6 @@
 package com.chapchap.customer.domain.knowledge.file;
 
-import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeFileValidationException;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.springframework.stereotype.Component;
@@ -122,7 +121,7 @@ public class KnowledgeFileValidator {
         return contentType.toLowerCase(Locale.ROOT);
     }
 
-    private BusinessException invalidFile() {
-        return new BusinessException(CustomResponseCode.INVALID_PARAMETER_ERROR, "허용되지 않았거나 손상된 Knowledge 파일입니다.");
+    private KnowledgeFileValidationException invalidFile() {
+        return new KnowledgeFileValidationException();
     }
 }

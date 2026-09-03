@@ -1,4 +1,4 @@
-package com.chapchap.customer.domain.knowledge.processing;
+package com.chapchap.customer.global.error.custom.knowledge;
 
 public class KnowledgeProcessingContractException extends RuntimeException {
     public KnowledgeProcessingContractException(String message) {

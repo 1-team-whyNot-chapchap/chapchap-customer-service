@@ -6,8 +6,7 @@ import com.chapchap.customer.domain.faq.repository.FaqRepository;
 import com.chapchap.customer.domain.faq.request.FaqCreateRequest;
 import com.chapchap.customer.domain.faq.request.FaqUpdateRequest;
 import com.chapchap.customer.domain.faq.response.FaqResponse;
-import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.faq.FaqNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -89,8 +88,8 @@ public class FaqService {
                 .orElseThrow(this::faqNotFound);
     }
 
-    private BusinessException faqNotFound() {
-        return new BusinessException(CustomResponseCode.NOT_FOUND_RESOURCE_ERROR, "FAQ를 찾을 수 없습니다.");
+    private FaqNotFoundException faqNotFound() {
+        return new FaqNotFoundException();
     }
 
     private String normalize(String value) {

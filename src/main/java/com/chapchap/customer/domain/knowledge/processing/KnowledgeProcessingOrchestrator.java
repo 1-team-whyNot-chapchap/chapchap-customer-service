@@ -2,6 +2,7 @@ package com.chapchap.customer.domain.knowledge.processing;
 
 import com.chapchap.customer.domain.knowledge.service.KnowledgeActivationService;
 import com.chapchap.customer.domain.knowledge.storage.KnowledgeObjectStorage;
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeProcessingContractException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;

@@ -7,7 +7,7 @@ import com.chapchap.customer.domain.notification.event.CustomerNotificationCreat
 import com.chapchap.customer.domain.notification.repository.NotificationRepository;
 import com.chapchap.customer.global.kafka.event.CustomerKafkaEvent;
 import com.chapchap.customer.global.kafka.event.CustomerKafkaEventType;
-import com.chapchap.customer.global.kafka.exception.KafkaContractException;
+import com.chapchap.customer.global.error.custom.kafka.KafkaContractException;
 import com.chapchap.customer.global.kafka.service.CustomerKafkaEventValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
