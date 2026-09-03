@@ -139,8 +139,20 @@ public class AuditLog {
         return actorUserId;
     }
 
+    public Long getId() {
+        return id;
+    }
+
+    public AuditActorType getActorType() {
+        return actorType;
+    }
+
     public AuditActionType getActionType() {
         return actionType;
+    }
+
+    public AuditTargetType getTargetType() {
+        return targetType;
     }
 
     public String getTargetId() {
@@ -151,7 +163,15 @@ public class AuditLog {
         return traceId;
     }
 
+    public AuditResult getResult() {
+        return result;
+    }
+
     public Map<String, Object> getDetail() {
         return detail;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }
