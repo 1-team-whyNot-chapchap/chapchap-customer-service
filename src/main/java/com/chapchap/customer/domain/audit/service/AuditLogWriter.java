@@ -5,6 +5,7 @@ import com.chapchap.customer.domain.audit.entity.AuditActorType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.faq.entity.Faq;
+import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
 import com.chapchap.customer.domain.consultation.entity.Consultation;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
@@ -73,6 +74,45 @@ public class AuditLogWriter {
                 consultationDetail(beforeStatus, consultation), now));
     }
 
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordKnowledgeVersionRegistered(Long actorUserId, KnowledgeVersion knowledgeVersion, LocalDateTime now) {
+        auditLogRepository.save(AuditLog.knowledgeVersionChange(
+                actorUserId,
+                AuditActorType.ADMIN,
+                AuditActionType.KNOWLEDGE_VERSION_REGISTERED,
+                String.valueOf(knowledgeVersion.getId()),
+                MDC.get(TRACE_ID_KEY),
+                knowledgeDetail(knowledgeVersion),
+                now
+        ));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordKnowledgeVersionActivated(KnowledgeVersion knowledgeVersion, LocalDateTime now) {
+        auditLogRepository.save(AuditLog.knowledgeVersionChange(
+                null,
+                AuditActorType.SYSTEM,
+                AuditActionType.KNOWLEDGE_VERSION_ACTIVATED,
+                String.valueOf(knowledgeVersion.getId()),
+                MDC.get(TRACE_ID_KEY),
+                knowledgeDetail(knowledgeVersion),
+                now
+        ));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordKnowledgeProcessingFailed(KnowledgeVersion knowledgeVersion, LocalDateTime now) {
+        auditLogRepository.save(AuditLog.knowledgeVersionChange(
+                null,
+                AuditActorType.SYSTEM,
+                AuditActionType.KNOWLEDGE_PROCESSING_FAILED,
+                String.valueOf(knowledgeVersion.getId()),
+                MDC.get(TRACE_ID_KEY),
+                knowledgeDetail(knowledgeVersion),
+                now
+        ));
+    }
+
     private Map<String, Object> changeDetail(Faq before, Faq after) {
         Map<String, Object> detail = new LinkedHashMap<>();
         detail.put("before", before == null ? null : snapshot(before));
@@ -100,6 +140,17 @@ public class AuditLogWriter {
         after.put("escalatedAt", consultation.getEscalatedAt());
         after.put("assignedAt", consultation.getAssignedAt());
         detail.put("after", after);
+        return detail;
+    }
+
+    private Map<String, Object> knowledgeDetail(KnowledgeVersion knowledgeVersion) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("knowledgeDocumentId", knowledgeVersion.getKnowledgeDocumentId());
+        detail.put("version", knowledgeVersion.getVersion());
+        detail.put("processingStatus", knowledgeVersion.getProcessingStatus().name());
+        detail.put("processingAttemptCount", knowledgeVersion.getProcessingAttemptCount());
+        detail.put("failureCode", knowledgeVersion.getFailureCode());
+        detail.put("retryable", knowledgeVersion.isRetryable());
         return detail;
     }
 }

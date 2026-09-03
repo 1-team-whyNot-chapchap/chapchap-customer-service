@@ -7,6 +7,8 @@ import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository
 import com.chapchap.customer.domain.faq.repository.FaqRepository;
 import com.chapchap.customer.domain.notification.repository.NotificationReadRepository;
 import com.chapchap.customer.domain.notification.repository.NotificationRepository;
+import com.chapchap.customer.domain.knowledge.repository.KnowledgeDocumentRepository;
+import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -224,6 +226,15 @@ class ChapchapCustomerServiceApplicationTests {
     }
 
     @Test
+    void rejectsCustomerRoleFromKnowledgeAdministrationEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/admin/knowledge/versions/1")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
     void validatesBlankConsultationContentBeforeServiceCall() throws Exception {
         mockMvc.perform(post("/api/customer/consultations")
                         .header(USER_ID_HEADER, "1")
@@ -241,7 +252,8 @@ class ChapchapCustomerServiceApplicationTests {
                 .andExpect(content().string(containsString("/api/customer/faqs")))
                 .andExpect(content().string(containsString("/api/customer/consultations")))
                 .andExpect(content().string(containsString("/admin-handoffs")))
-                .andExpect(content().string(containsString("/api/customer/admin/consultations")));
+                .andExpect(content().string(containsString("/api/customer/admin/consultations")))
+                .andExpect(content().string(containsString("/api/customer/admin/knowledge/versions")));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -284,6 +296,16 @@ class ChapchapCustomerServiceApplicationTests {
         @Bean
         NotificationReadRepository notificationReadRepository() {
             return mock(NotificationReadRepository.class);
+        }
+
+        @Bean
+        KnowledgeDocumentRepository knowledgeDocumentRepository() {
+            return mock(KnowledgeDocumentRepository.class);
+        }
+
+        @Bean
+        KnowledgeVersionRepository knowledgeVersionRepository() {
+            return mock(KnowledgeVersionRepository.class);
         }
     }
 

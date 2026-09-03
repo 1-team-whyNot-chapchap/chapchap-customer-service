@@ -35,6 +35,23 @@ spring:
       ack-mode: record
 
 customer:
+  storage:
+    knowledge:
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${MINIO_ACCESS_KEY}
+      secret-key: ${MINIO_SECRET_KEY}
+      bucket: ${MINIO_KNOWLEDGE_BUCKET:customer-knowledge}
+      presigned-get-url-expiry-seconds: ${MINIO_KNOWLEDGE_PRESIGNED_GET_URL_EXPIRY_SECONDS:300}
+  knowledge:
+    activation-scheduler:
+      enabled: ${KNOWLEDGE_ACTIVATION_SCHEDULER_ENABLED:true}
+      fixed-delay: ${KNOWLEDGE_ACTIVATION_SCHEDULER_FIXED_DELAY:60000}
+  ai:
+    knowledge-processing:
+      base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
+      service-token: ${CUSTOMER_AI_SERVICE_TOKEN:}
+      connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
+      read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
   kafka:
     topics:
       payment: subscription.payment-events.v1
