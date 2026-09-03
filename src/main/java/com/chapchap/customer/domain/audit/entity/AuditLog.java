@@ -94,6 +94,27 @@ public class AuditLog {
         return new AuditLog(actorUserId, actionType, targetId, traceId, actorType, AuditTargetType.CONSULTATION, detail, createdAt);
     }
 
+    public static AuditLog knowledgeVersionChange(
+            Long actorUserId,
+            AuditActorType actorType,
+            AuditActionType actionType,
+            String targetId,
+            String traceId,
+            Map<String, Object> detail,
+            LocalDateTime createdAt
+    ) {
+        return new AuditLog(
+                actorUserId,
+                actionType,
+                targetId,
+                traceId,
+                actorType,
+                AuditTargetType.KNOWLEDGE_VERSION,
+                detail,
+                createdAt
+        );
+    }
+
     public Long getActorUserId() {
         return actorUserId;
     }
