@@ -257,6 +257,15 @@ class ChapchapCustomerServiceApplicationTests {
     }
 
     @Test
+    void rejectsCustomerRoleFromAuditLogEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/admin/audit-logs")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
     void validatesBlankConsultationContentBeforeServiceCall() throws Exception {
         mockMvc.perform(post("/api/customer/consultations")
                         .header(USER_ID_HEADER, "1")
@@ -277,7 +286,8 @@ class ChapchapCustomerServiceApplicationTests {
                 .andExpect(content().string(containsString("/api/customer/admin/consultations")))
                 .andExpect(content().string(containsString("/api/customer/admin/knowledge/versions")))
                 .andExpect(content().string(containsString("/api/customer/quality-inquiries")))
-                .andExpect(content().string(containsString("/api/customer/admin/quality-inquiries")));
+                .andExpect(content().string(containsString("/api/customer/admin/quality-inquiries")))
+                .andExpect(content().string(containsString("/api/customer/admin/audit-logs")));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
