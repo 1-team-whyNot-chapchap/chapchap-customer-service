@@ -6,6 +6,7 @@ import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.faq.entity.Faq;
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
+import com.chapchap.customer.domain.quality.entity.QualityInquiry;
 import com.chapchap.customer.domain.consultation.entity.Consultation;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.MDC;
@@ -72,6 +73,23 @@ public class AuditLogWriter {
         auditLogRepository.save(AuditLog.consultationChange(actorUserId, AuditActionType.CONSULTATION_ACCEPTED,
                 String.valueOf(consultation.getId()), MDC.get(TRACE_ID_KEY), AuditActorType.ADMIN,
                 consultationDetail(beforeStatus, consultation), now));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordQualityInquiryProcessed(
+            Long actorUserId,
+            QualityInquiry before,
+            QualityInquiry after,
+            LocalDateTime now
+    ) {
+        auditLogRepository.save(AuditLog.qualityInquiryChange(
+                actorUserId,
+                AuditActionType.QUALITY_INQUIRY_PROCESSED,
+                String.valueOf(after.getId()),
+                MDC.get(TRACE_ID_KEY),
+                qualityInquiryDetail(before, after),
+                now
+        ));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -152,5 +170,24 @@ public class AuditLogWriter {
         detail.put("failureCode", knowledgeVersion.getFailureCode());
         detail.put("retryable", knowledgeVersion.isRetryable());
         return detail;
+    }
+
+    private Map<String, Object> qualityInquiryDetail(QualityInquiry before, QualityInquiry after) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("before", qualityInquirySnapshot(before));
+        detail.put("after", qualityInquirySnapshot(after));
+        return detail;
+    }
+
+    private Map<String, Object> qualityInquirySnapshot(QualityInquiry inquiry) {
+        Map<String, Object> snapshot = new LinkedHashMap<>();
+        snapshot.put("inquiryType", inquiry.getInquiryType().name());
+        snapshot.put("status", inquiry.getStatus().name());
+        snapshot.put("priority", inquiry.getPriority());
+        snapshot.put("assignedAdminId", inquiry.getAssignedAdminId());
+        snapshot.put("adminAnswer", inquiry.getAdminAnswer());
+        snapshot.put("resolvedAt", inquiry.getResolvedAt());
+        snapshot.put("closedAt", inquiry.getClosedAt());
+        return snapshot;
     }
 }

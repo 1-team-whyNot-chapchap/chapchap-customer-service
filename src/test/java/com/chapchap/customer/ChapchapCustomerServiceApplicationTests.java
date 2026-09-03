@@ -9,6 +9,7 @@ import com.chapchap.customer.domain.notification.repository.NotificationReadRepo
 import com.chapchap.customer.domain.notification.repository.NotificationRepository;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeDocumentRepository;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
+import com.chapchap.customer.domain.quality.repository.QualityInquiryRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,7 +39,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.mockito.Mockito.mock;
 import static org.hamcrest.Matchers.containsString;
 
-@SpringBootTest(properties = "springdoc.api-docs.path=/api-docs")
+@SpringBootTest(properties = {
+        "springdoc.api-docs.path=/api-docs",
+        "customer.storage.knowledge.access-key=test-access-key",
+        "customer.storage.knowledge.secret-key=test-secret-key",
+        "customer.storage.quality-inquiry.access-key=test-access-key",
+        "customer.storage.quality-inquiry.secret-key=test-secret-key"
+})
 @Import(ChapchapCustomerServiceApplicationTests.SecurityProbeConfiguration.class)
 class ChapchapCustomerServiceApplicationTests {
     private static final String USER_ID_HEADER = "X-User-Id";
@@ -235,6 +242,21 @@ class ChapchapCustomerServiceApplicationTests {
     }
 
     @Test
+    void separatesQualityInquiryUserAndAdministratorEndpoints() throws Exception {
+        mockMvc.perform(get("/api/customer/quality-inquiries")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("00"));
+
+        mockMvc.perform(get("/api/customer/admin/quality-inquiries")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
     void validatesBlankConsultationContentBeforeServiceCall() throws Exception {
         mockMvc.perform(post("/api/customer/consultations")
                         .header(USER_ID_HEADER, "1")
@@ -253,7 +275,9 @@ class ChapchapCustomerServiceApplicationTests {
                 .andExpect(content().string(containsString("/api/customer/consultations")))
                 .andExpect(content().string(containsString("/admin-handoffs")))
                 .andExpect(content().string(containsString("/api/customer/admin/consultations")))
-                .andExpect(content().string(containsString("/api/customer/admin/knowledge/versions")));
+                .andExpect(content().string(containsString("/api/customer/admin/knowledge/versions")))
+                .andExpect(content().string(containsString("/api/customer/quality-inquiries")))
+                .andExpect(content().string(containsString("/api/customer/admin/quality-inquiries")));
     }
 
     @TestConfiguration(proxyBeanMethods = false)
@@ -306,6 +330,11 @@ class ChapchapCustomerServiceApplicationTests {
         @Bean
         KnowledgeVersionRepository knowledgeVersionRepository() {
             return mock(KnowledgeVersionRepository.class);
+        }
+
+        @Bean
+        QualityInquiryRepository qualityInquiryRepository() {
+            return mock(QualityInquiryRepository.class);
         }
     }
 

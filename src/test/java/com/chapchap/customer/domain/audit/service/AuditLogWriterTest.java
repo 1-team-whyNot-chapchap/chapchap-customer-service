@@ -4,6 +4,9 @@ import com.chapchap.customer.domain.audit.entity.AuditActionType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.faq.entity.Faq;
+import com.chapchap.customer.domain.quality.entity.QualityInquiry;
+import com.chapchap.customer.domain.quality.entity.QualityInquiryStatus;
+import com.chapchap.customer.domain.quality.entity.QualityInquiryType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,5 +53,25 @@ class AuditLogWriterTest {
         Map<?, ?> afterDetail = (Map<?, ?>) auditLog.getDetail().get("after");
         assertThat(beforeDetail.get("active")).isEqualTo(true);
         assertThat(afterDetail.get("active")).isEqualTo(false);
+    }
+
+    @Test
+    void recordsQualityInquiryProcessingWithBeforeAndAfterState() {
+        AuditLogWriter auditLogWriter = new AuditLogWriter(auditLogRepository);
+        LocalDateTime createdAt = LocalDateTime.of(2026, 9, 3, 10, 0);
+        QualityInquiry inquiry = QualityInquiry.create(7L, 10L, 20L, null, QualityInquiryType.DAMAGED, "파손 문의", createdAt);
+        org.springframework.test.util.ReflectionTestUtils.setField(inquiry, "id", 5L);
+        QualityInquiry before = inquiry.snapshot();
+        inquiry.process(11L, QualityInquiryType.DAMAGED, "HIGH", QualityInquiryStatus.IN_PROGRESS, null, createdAt.plusMinutes(1));
+
+        auditLogWriter.recordQualityInquiryProcessed(11L, before, inquiry, createdAt.plusMinutes(1));
+
+        ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
+        verify(auditLogRepository).save(captor.capture());
+        assertThat(captor.getValue().getActionType()).isEqualTo(com.chapchap.customer.domain.audit.entity.AuditActionType.QUALITY_INQUIRY_PROCESSED);
+        Map<?, ?> beforeDetail = (Map<?, ?>) captor.getValue().getDetail().get("before");
+        Map<?, ?> afterDetail = (Map<?, ?>) captor.getValue().getDetail().get("after");
+        assertThat(beforeDetail.get("status")).isEqualTo("RECEIVED");
+        assertThat(afterDetail.get("status")).isEqualTo("IN_PROGRESS");
     }
 }

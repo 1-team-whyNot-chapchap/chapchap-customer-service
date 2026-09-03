@@ -94,6 +94,26 @@ public class AuditLog {
         return new AuditLog(actorUserId, actionType, targetId, traceId, actorType, AuditTargetType.CONSULTATION, detail, createdAt);
     }
 
+    public static AuditLog qualityInquiryChange(
+            Long actorUserId,
+            AuditActionType actionType,
+            String targetId,
+            String traceId,
+            Map<String, Object> detail,
+            LocalDateTime createdAt
+    ) {
+        return new AuditLog(
+                actorUserId,
+                actionType,
+                targetId,
+                traceId,
+                AuditActorType.ADMIN,
+                AuditTargetType.QUALITY_INQUIRY,
+                detail,
+                createdAt
+        );
+    }
+
     public static AuditLog knowledgeVersionChange(
             Long actorUserId,
             AuditActorType actorType,

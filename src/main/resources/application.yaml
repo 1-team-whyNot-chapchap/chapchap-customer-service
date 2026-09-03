@@ -42,6 +42,11 @@ customer:
       secret-key: ${MINIO_SECRET_KEY}
       bucket: ${MINIO_KNOWLEDGE_BUCKET:customer-knowledge}
       presigned-get-url-expiry-seconds: ${MINIO_KNOWLEDGE_PRESIGNED_GET_URL_EXPIRY_SECONDS:300}
+    quality-inquiry:
+      endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+      access-key: ${MINIO_ACCESS_KEY}
+      secret-key: ${MINIO_SECRET_KEY}
+      bucket: ${MINIO_QUALITY_INQUIRY_BUCKET:customer-quality}
   knowledge:
     activation-scheduler:
       enabled: ${KNOWLEDGE_ACTIVATION_SCHEDULER_ENABLED:true}
