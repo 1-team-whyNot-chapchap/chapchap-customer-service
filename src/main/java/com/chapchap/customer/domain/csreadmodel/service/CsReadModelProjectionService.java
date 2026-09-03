@@ -79,7 +79,7 @@ public class CsReadModelProjectionService {
     private String paymentFailureStatus(CustomerKafkaEvent event) {
         String paymentStatus = eventValidator.requiredText(event, "paymentStatus");
         if (!paymentStatus.equals("RETRY_WAITING") && !paymentStatus.equals("FAILED")) {
-            throw new com.chapchap.customer.global.kafka.exception.KafkaContractException(
+            throw new com.chapchap.customer.global.error.custom.kafka.KafkaContractException(
                     "PAYMENT_FAILED paymentStatus가 허용되지 않습니다."
             );
         }

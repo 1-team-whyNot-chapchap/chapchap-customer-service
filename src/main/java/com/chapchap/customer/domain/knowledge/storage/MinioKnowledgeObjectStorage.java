@@ -1,6 +1,7 @@
 package com.chapchap.customer.domain.knowledge.storage;
 
 import com.chapchap.customer.global.config.KnowledgeStorageProperties;
+import com.chapchap.customer.global.error.custom.knowledge.KnowledgeStorageException;
 import io.minio.MinioClient;
 import io.minio.GetPresignedObjectUrlArgs;
 import io.minio.PutObjectArgs;

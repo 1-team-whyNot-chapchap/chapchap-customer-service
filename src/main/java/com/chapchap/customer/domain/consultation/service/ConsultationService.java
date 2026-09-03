@@ -15,8 +15,8 @@ import com.chapchap.customer.domain.consultation.response.ConsultationCreatedRes
 import com.chapchap.customer.domain.consultation.response.ConsultationMessageResponse;
 import com.chapchap.customer.domain.consultation.response.ConsultationMessagesResponse;
 import com.chapchap.customer.domain.consultation.response.ConsultationResponse;
-import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.consultation.ConsultationNotFoundException;
+import com.chapchap.customer.global.error.custom.consultation.ConsultationStateException;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -66,15 +66,11 @@ public class ConsultationService {
     @Transactional
     public ConsultationResponse requestAdminHandoff(Long userId, Long consultationId) {
         Consultation consultation = findMyConsultationEntity(userId, consultationId);
-        try {
-            String beforeStatus = consultation.getStatus().name();
-            if (consultation.requestAdminHandoff(LocalDateTime.now())) {
-                auditLogWriter.recordConsultationEscalated(userId, consultation, beforeStatus, consultation.getUpdatedAt());
-            }
-            return ConsultationResponse.from(consultation);
-        } catch (IllegalStateException exception) {
-            throw new BusinessException(CustomResponseCode.INVALID_STATE_ERROR, exception.getMessage());
+        String beforeStatus = consultation.getStatus().name();
+        if (consultation.requestAdminHandoff(LocalDateTime.now())) {
+            auditLogWriter.recordConsultationEscalated(userId, consultation, beforeStatus, consultation.getUpdatedAt());
         }
+        return ConsultationResponse.from(consultation);
     }
 
     @Transactional(readOnly = true)
@@ -88,12 +84,12 @@ public class ConsultationService {
         LocalDateTime now = LocalDateTime.now();
         if (consultationRepository.acceptWaitingConsultation(consultationId, adminId, now) != 1) {
             if (!consultationRepository.existsById(consultationId)) {
-                throw new BusinessException(CustomResponseCode.NOT_FOUND_RESOURCE_ERROR, "상담을 찾을 수 없습니다.");
+                throw new ConsultationNotFoundException();
             }
-            throw new BusinessException(CustomResponseCode.INVALID_STATE_ERROR, "상담을 수락할 수 없는 상태입니다.");
+            throw new ConsultationStateException("상담을 수락할 수 없는 상태입니다.");
         }
         Consultation consultation = consultationRepository.findById(consultationId)
-                .orElseThrow(() -> new BusinessException(CustomResponseCode.NOT_FOUND_RESOURCE_ERROR, "상담을 찾을 수 없습니다."));
+                .orElseThrow(ConsultationNotFoundException::new);
         auditLogWriter.recordConsultationAccepted(adminId, consultation, ConsultationStatus.WAITING_ADMIN.name(), now);
         return ConsultationResponse.from(consultation);
     }
@@ -105,12 +101,12 @@ public class ConsultationService {
             ConsultationRealtimeMessageRequest request
     ) {
         Consultation consultation = consultationRepository.findByIdForMessageWrite(consultationId)
-                .orElseThrow(() -> new BusinessException(CustomResponseCode.NOT_FOUND_RESOURCE_ERROR, "상담을 찾을 수 없습니다."));
+                .orElseThrow(ConsultationNotFoundException::new);
         Long senderUserId = requireUserId(principal);
         ConsultationSenderType senderType = resolveMessageSenderType(principal, consultation, senderUserId);
 
         if (consultation.getStatus() != ConsultationStatus.IN_PROGRESS) {
-            throw new BusinessException(CustomResponseCode.INVALID_STATE_ERROR, "진행 중인 상담에서만 메시지를 보낼 수 있습니다.");
+            throw new ConsultationStateException("진행 중인 상담에서만 메시지를 보낼 수 있습니다.");
         }
 
         int nextSequenceNo = consultationMessageRepository
@@ -134,17 +130,14 @@ public class ConsultationService {
     @Transactional(readOnly = true)
     public void assertWebSocketParticipant(Long consultationId, GatewayUserPrincipal principal) {
         Consultation consultation = consultationRepository.findById(consultationId)
-                .orElseThrow(() -> new BusinessException(CustomResponseCode.NOT_FOUND_RESOURCE_ERROR, "상담을 찾을 수 없습니다."));
+                .orElseThrow(ConsultationNotFoundException::new);
         Long userId = requireUserId(principal);
         resolveMessageSenderType(principal, consultation, userId);
     }
 
     private Consultation findMyConsultationEntity(Long userId, Long consultationId) {
         return consultationRepository.findByIdAndUserId(consultationId, userId)
-                .orElseThrow(() -> new BusinessException(
-                        CustomResponseCode.NOT_FOUND_RESOURCE_ERROR,
-                        "상담을 찾을 수 없습니다."
-                ));
+                .orElseThrow(ConsultationNotFoundException::new);
     }
 
     private ConsultationSenderType resolveMessageSenderType(

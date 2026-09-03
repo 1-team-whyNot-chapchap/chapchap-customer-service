@@ -6,8 +6,7 @@ import com.chapchap.customer.domain.notification.entity.NotificationRecipientTyp
 import com.chapchap.customer.domain.notification.repository.NotificationReadRepository;
 import com.chapchap.customer.domain.notification.repository.NotificationRepository;
 import com.chapchap.customer.domain.notification.response.NotificationResponse;
-import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.notification.NotificationNotFoundException;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -80,20 +79,17 @@ public class NotificationService {
                     notificationId, NotificationRecipientType.ADMIN
             );
             case SUPER_ADMIN -> throw new AccessDeniedException("관리자 역할 그룹 알림 수신 계약에 포함되지 않습니다.");
-        }).orElseThrow(() -> new BusinessException(
-                CustomResponseCode.NOT_FOUND_RESOURCE_ERROR,
-                "알림을 찾을 수 없습니다."
-        ));
+        }).orElseThrow(NotificationNotFoundException::new);
     }
 
     private Long requireUserId(GatewayUserPrincipal principal) {
         if (principal == null) {
-            throw new BusinessException(CustomResponseCode.UNAUTHENTICATED_ERROR, "인증 정보가 없습니다.");
+            throw new AccessDeniedException("인증 정보가 없습니다.");
         }
         try {
             return Long.parseLong(principal.userId());
         } catch (NumberFormatException exception) {
-            throw new BusinessException(CustomResponseCode.UNAUTHENTICATED_ERROR, "유효하지 않은 사용자 ID입니다.");
+            throw new AccessDeniedException("유효하지 않은 사용자 ID입니다.");
         }
     }
 }

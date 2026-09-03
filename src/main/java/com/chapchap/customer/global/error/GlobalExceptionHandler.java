@@ -31,11 +31,11 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 커스텀 Exceptions 처리
-     * @param e BusinessException
+     * 업무 규칙 실패와 기능별 BusinessException 하위 예외를 처리한다.
+     * 기술/계약 예외는 이 경계에 포함하지 않고 기본 시스템 오류 처리로 전달한다.
      */
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<GlobalResponse<Void>> handle(BusinessException e) {
+    public ResponseEntity<GlobalResponse<Void>> handleBusinessException(BusinessException e) {
         log.debug(e.getMessage(), e);
         return this.generateErrorResponse(e.getCustomResponseCode());
     }

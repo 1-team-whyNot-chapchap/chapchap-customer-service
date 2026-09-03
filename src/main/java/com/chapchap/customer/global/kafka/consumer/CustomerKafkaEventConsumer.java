@@ -1,7 +1,7 @@
 package com.chapchap.customer.global.kafka.consumer;
 
 import com.chapchap.customer.global.kafka.event.CustomerKafkaEvent;
-import com.chapchap.customer.global.kafka.exception.KafkaContractException;
+import com.chapchap.customer.global.error.custom.kafka.KafkaContractException;
 import com.chapchap.customer.global.kafka.service.CustomerKafkaEventProcessingService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.kafka.annotation.BackOff;
