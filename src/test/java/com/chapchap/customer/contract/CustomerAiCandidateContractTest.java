@@ -103,7 +103,8 @@ class CustomerAiCandidateContractTest {
         assertJobIdentity(failed, "processingId", "knowledgeVersionId");
         assertEnum(failed, "status", "FAILED");
         assertEnum(failed, "failureCode", "SOURCE_FETCH_FAILED", "TEXT_EXTRACTION_FAILED", "UNSUPPORTED_DOCUMENT",
-                "ENCRYPTED_DOCUMENT", "CHUNK_PROFILE_INVALID", "EMBEDDING_UNAVAILABLE", "VECTOR_STORE_UNAVAILABLE", "PROCESSING_TIMEOUT");
+                "ENCRYPTED_DOCUMENT", "CHUNK_PROFILE_INVALID", "EMBEDDING_UNAVAILABLE",
+                "VECTOR_STORE_UNAVAILABLE", "PROCESSING_TIMEOUT", "CUSTOMER_AI_UNAVAILABLE");
         assertThat(failed.required("retryable").isBoolean()).isTrue();
         assertThat(failed.has("chunkCount")).isFalse();
     }
