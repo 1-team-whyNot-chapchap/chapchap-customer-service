@@ -122,7 +122,7 @@ class CustomerAiCandidateContractTest {
         assertThat(request.required("messages").isArray()).isTrue();
         assertThat(request.required("messages")).isNotEmpty().allSatisfy(message -> {
             assertExactFields(message, "senderType", "content");
-            assertEnum(message, "senderType", "USER", "ADMIN");
+            assertEnum(message, "senderType", "USER", "ADMIN", "AI");
             assertThat(message.required("content").textValue()).isNotBlank();
         });
         assertCallback(request.required("callback"), "/internal/v1/consultation-summary-results");
@@ -141,7 +141,8 @@ class CustomerAiCandidateContractTest {
         JsonNode failed = summary.required("failed");
         assertSummaryIdentity(failed, "schemaVersion", "summaryJobId", "consultationId", "status", "failureCode", "retryable");
         assertEnum(failed, "status", "FAILED");
-        assertEnum(failed, "failureCode", "LLM_UNAVAILABLE", "SUMMARY_TIMEOUT", "INVALID_CONTEXT");
+        assertEnum(failed, "failureCode", "UNSAFE_CONTEXT", "SUMMARY_GENERATION_FAILED",
+                "LLM_UNAVAILABLE", "PROCESSING_TIMEOUT", "CUSTOMER_AI_UNAVAILABLE");
         assertThat(failed.required("retryable").isBoolean()).isTrue();
         assertThat(failed.has("summary")).isFalse();
     }
