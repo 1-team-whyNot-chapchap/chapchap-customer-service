@@ -1,14 +1,27 @@
 package com.chapchap.customer.domain.consultation.ai.currentstate;
 
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 
 public final class CurrentStateTrustedContextBoundary {
     private static final Pattern POSITIVE_INT64 = Pattern.compile("[1-9][0-9]*");
     private static final Set<RolePolicy> ALLOWED_ROLES = Set.of(RolePolicy.CUSTOMER, RolePolicy.RIDER);
+
+    private final CustomerAiDiagnosticPublisher diagnostics;
+
+    public CurrentStateTrustedContextBoundary() {
+        this(CustomerAiDiagnosticPublisher.noOp());
+    }
+
+    public CurrentStateTrustedContextBoundary(CustomerAiDiagnosticPublisher diagnostics) {
+        this.diagnostics = Objects.requireNonNull(diagnostics);
+    }
 
     public TrustedCurrentStateContext create(CurrentStateAccessRequest request) {
         if (request == null) {
@@ -21,13 +34,18 @@ public final class CurrentStateTrustedContextBoundary {
         }
 
         long userId = parseUserId(principal.userId());
-        return new TrustedCurrentStateContext(
+        TrustedCurrentStateContext context = new TrustedCurrentStateContext(
                 userId,
                 principal.role(),
                 request.requestId(),
                 request.consultationId(),
                 request.capabilities()
         );
+        for (CurrentStateCapability capability : context.capabilities()) {
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.currentStateAccessGranted(
+                    context.requestId(), traceId, context.consultationId(), capability));
+        }
+        return context;
     }
 
     private long parseUserId(String value) {

@@ -1,5 +1,8 @@
 package com.chapchap.customer.domain.knowledge.processing.async;
 
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
 import com.chapchap.customer.global.security.customerai.CustomerAiServiceTokenProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,20 +23,49 @@ public final class HttpCustomerAiKnowledgeJobClient implements CustomerAiKnowled
     private final RestClient restClient;
     private final CustomerAiServiceTokenProvider serviceTokenProvider;
     private final CustomerAiKnowledgeJobResponseParser responseParser;
+    private final CustomerAiDiagnosticPublisher diagnostics;
 
     public HttpCustomerAiKnowledgeJobClient(
             RestClient restClient,
             CustomerAiServiceTokenProvider serviceTokenProvider,
             CustomerAiKnowledgeJobResponseParser responseParser
     ) {
+        this(restClient, serviceTokenProvider, responseParser, CustomerAiDiagnosticPublisher.noOp());
+    }
+
+    public HttpCustomerAiKnowledgeJobClient(
+            RestClient restClient,
+            CustomerAiServiceTokenProvider serviceTokenProvider,
+            CustomerAiKnowledgeJobResponseParser responseParser,
+            CustomerAiDiagnosticPublisher diagnostics
+    ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.serviceTokenProvider = Objects.requireNonNull(serviceTokenProvider);
         this.responseParser = Objects.requireNonNull(responseParser);
+        this.diagnostics = Objects.requireNonNull(diagnostics);
     }
 
     @Override
     public CustomerAiKnowledgeJobAccepted submit(CustomerAiKnowledgeJobCommand command) {
         Objects.requireNonNull(command, "command must not be null.");
+        try {
+            CustomerAiKnowledgeJobAccepted accepted = doSubmit(command);
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.knowledgeSubmitted(
+                    command.requestId(), traceId, command.knowledgeVersionId(), accepted.processingId()));
+            return accepted;
+        } catch (CustomerAiKnowledgeJobClientException exception) {
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.knowledgeSubmissionFailure(
+                    command.requestId(),
+                    traceId,
+                    command.knowledgeVersionId(),
+                    CustomerAiDiagnosticFailureCode.from(exception.reason()),
+                    exception.retryable()
+            ));
+            throw exception;
+        }
+    }
+
+    private CustomerAiKnowledgeJobAccepted doSubmit(CustomerAiKnowledgeJobCommand command) {
         String token = serviceToken();
         try {
             ResponseEntity<String> response = restClient.post()

@@ -1,5 +1,10 @@
 package com.chapchap.customer.domain.consultation.ai;
 
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticOutcome;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
+import com.chapchap.customer.global.security.customerai.CustomerAiAuthenticationUnavailableException;
 import com.chapchap.customer.global.security.customerai.CustomerAiRequestCredentials;
 import com.chapchap.customer.global.security.customerai.CustomerAiRequestCredentialsProvider;
 import org.springframework.http.HttpHeaders;
@@ -21,20 +26,51 @@ public final class HttpCustomerAiConsultationClient implements CustomerAiConsult
     private final RestClient restClient;
     private final CustomerAiRequestCredentialsProvider credentialsProvider;
     private final CustomerAiConsultationResponseParser responseParser;
+    private final CustomerAiDiagnosticPublisher diagnostics;
 
     public HttpCustomerAiConsultationClient(
             RestClient restClient,
             CustomerAiRequestCredentialsProvider credentialsProvider,
             CustomerAiConsultationResponseParser responseParser
     ) {
+        this(restClient, credentialsProvider, responseParser, CustomerAiDiagnosticPublisher.noOp());
+    }
+
+    public HttpCustomerAiConsultationClient(
+            RestClient restClient,
+            CustomerAiRequestCredentialsProvider credentialsProvider,
+            CustomerAiConsultationResponseParser responseParser,
+            CustomerAiDiagnosticPublisher diagnostics
+    ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.credentialsProvider = Objects.requireNonNull(credentialsProvider);
         this.responseParser = Objects.requireNonNull(responseParser);
+        this.diagnostics = Objects.requireNonNull(diagnostics);
     }
 
     @Override
     public CustomerAiConsultationResult respond(CustomerAiConsultationCommand command) {
         Objects.requireNonNull(command, "command must not be null.");
+        try {
+            CustomerAiConsultationResult result = doRespond(command);
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.consultationResult(
+                    command.requestId(),
+                    traceId,
+                    command.consultationId(),
+                    result.route(),
+                    CustomerAiDiagnosticOutcome.valueOf(result.decision().name())
+            ));
+            return result;
+        } catch (CustomerAiConsultationClientException exception) {
+            emitFailure(command, CustomerAiDiagnosticFailureCode.from(exception.reason()), exception.retryable());
+            throw exception;
+        } catch (CustomerAiAuthenticationUnavailableException exception) {
+            emitFailure(command, CustomerAiDiagnosticFailureCode.AUTHENTICATION_UNAVAILABLE, false);
+            throw exception;
+        }
+    }
+
+    private CustomerAiConsultationResult doRespond(CustomerAiConsultationCommand command) {
         CustomerAiRequestCredentials credentials = credentialsProvider.create(command.subject());
         CustomerAiConsultationRequest request = CustomerAiConsultationRequest.from(command);
         String responseBody;
@@ -59,6 +95,15 @@ public final class HttpCustomerAiConsultationClient implements CustomerAiConsult
         }
 
         return responseParser.parse(responseBody, command.requestId());
+    }
+
+    private void emitFailure(
+            CustomerAiConsultationCommand command,
+            CustomerAiDiagnosticFailureCode failureCode,
+            boolean retryable
+    ) {
+        diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.consultationFailure(
+                command.requestId(), traceId, command.consultationId(), failureCode, retryable));
     }
 
     private boolean isTimeout(Throwable exception) {
