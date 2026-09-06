@@ -1,4 +1,4 @@
-package com.chapchap.customer.domain.notification.service;
+package com.chapchap.customer.domain.notification.dto;
 
 import com.chapchap.customer.domain.notification.entity.NotificationType;
 

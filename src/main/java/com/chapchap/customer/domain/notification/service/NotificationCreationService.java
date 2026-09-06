@@ -1,5 +1,6 @@
 package com.chapchap.customer.domain.notification.service;
 
+import com.chapchap.customer.domain.notification.dto.NotificationTemplate;
 import com.chapchap.customer.domain.notification.entity.Notification;
 import com.chapchap.customer.domain.notification.entity.NotificationRecipientType;
 import com.chapchap.customer.domain.notification.entity.NotificationType;
