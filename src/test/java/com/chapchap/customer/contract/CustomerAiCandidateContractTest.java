@@ -261,7 +261,7 @@ class CustomerAiCandidateContractTest {
     }
 
     private static void assertAvailability(JsonNode node) {
-        assertEnum(node, "availability", "AVAILABLE", "NOT_FOUND", "UNAVAILABLE", "TIMEOUT", "FORBIDDEN", "CONTRACT_ERROR");
+        assertEnum(node, "availability", "AVAILABLE", "NOT_FOUND", "UNAVAILABLE", "TIMEOUT", "FORBIDDEN");
     }
 
     private static void assertPositiveLong(JsonNode node, String field) {
