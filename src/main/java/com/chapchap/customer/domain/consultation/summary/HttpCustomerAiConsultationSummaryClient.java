@@ -1,5 +1,8 @@
 package com.chapchap.customer.domain.consultation.summary;
 
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
 import com.chapchap.customer.global.security.customerai.CustomerAiServiceTokenProvider;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,20 +23,49 @@ public final class HttpCustomerAiConsultationSummaryClient implements CustomerAi
     private final RestClient restClient;
     private final CustomerAiServiceTokenProvider serviceTokenProvider;
     private final CustomerAiConsultationSummaryResponseParser responseParser;
+    private final CustomerAiDiagnosticPublisher diagnostics;
 
     public HttpCustomerAiConsultationSummaryClient(
             RestClient restClient,
             CustomerAiServiceTokenProvider serviceTokenProvider,
             CustomerAiConsultationSummaryResponseParser responseParser
     ) {
+        this(restClient, serviceTokenProvider, responseParser, CustomerAiDiagnosticPublisher.noOp());
+    }
+
+    public HttpCustomerAiConsultationSummaryClient(
+            RestClient restClient,
+            CustomerAiServiceTokenProvider serviceTokenProvider,
+            CustomerAiConsultationSummaryResponseParser responseParser,
+            CustomerAiDiagnosticPublisher diagnostics
+    ) {
         this.restClient = Objects.requireNonNull(restClient);
         this.serviceTokenProvider = Objects.requireNonNull(serviceTokenProvider);
         this.responseParser = Objects.requireNonNull(responseParser);
+        this.diagnostics = Objects.requireNonNull(diagnostics);
     }
 
     @Override
     public CustomerAiConsultationSummaryAccepted submit(CustomerAiConsultationSummaryCommand command) {
         Objects.requireNonNull(command, "command must not be null.");
+        try {
+            CustomerAiConsultationSummaryAccepted accepted = doSubmit(command);
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.summarySubmitted(
+                    command.requestId(), traceId, accepted.consultationId()));
+            return accepted;
+        } catch (CustomerAiConsultationSummaryClientException exception) {
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.summarySubmissionFailure(
+                    command.requestId(),
+                    traceId,
+                    command.consultationId(),
+                    CustomerAiDiagnosticFailureCode.from(exception.reason()),
+                    exception.retryable()
+            ));
+            throw exception;
+        }
+    }
+
+    private CustomerAiConsultationSummaryAccepted doSubmit(CustomerAiConsultationSummaryCommand command) {
         String token = serviceToken();
         try {
             ResponseEntity<String> response = restClient.post()
