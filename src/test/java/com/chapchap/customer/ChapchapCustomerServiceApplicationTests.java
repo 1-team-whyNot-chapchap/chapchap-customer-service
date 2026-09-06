@@ -1,6 +1,13 @@
 package com.chapchap.customer;
 
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
+import com.chapchap.customer.domain.consultation.ai.HttpCustomerAiConsultationClient;
+import com.chapchap.customer.domain.consultation.ai.currentstate.CurrentStateTrustedContextBoundary;
+import com.chapchap.customer.domain.consultation.summary.ConsultationSummaryCallbackConsumer;
+import com.chapchap.customer.domain.consultation.summary.HttpCustomerAiConsultationSummaryClient;
+import com.chapchap.customer.domain.knowledge.processing.async.HttpCustomerAiKnowledgeJobClient;
+import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackConsumer;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
 import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
@@ -30,6 +37,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.security.Principal;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -65,6 +73,16 @@ class ChapchapCustomerServiceApplicationTests {
 
     @Test
     void contextLoads() {
+    }
+    @Test
+    void keepsCustomerAiCandidateRuntimeComponentsUnregistered() {
+        assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiConsultationClient.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiKnowledgeJobClient.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiConsultationSummaryClient.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(KnowledgeProcessingCallbackConsumer.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(ConsultationSummaryCallbackConsumer.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(CurrentStateTrustedContextBoundary.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticSink.class)).isEmpty();
     }
 
     @Test
