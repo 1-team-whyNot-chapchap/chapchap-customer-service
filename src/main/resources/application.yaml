@@ -54,6 +54,8 @@ customer:
   ai:
     activation:
       mode: ${CUSTOMER_AI_ACTIVATION_MODE:DISABLED}
+    observability:
+      enabled: ${CUSTOMER_AI_OBSERVABILITY_ENABLED:true}
     internal-auth:
       enabled: ${CUSTOMER_AI_INTERNAL_AUTH_ENABLED:false}
       auth-base-url: ${AUTH_SERVICE_BASE_URL:https://auth-service}
@@ -84,6 +86,11 @@ customer:
       base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
       connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
       read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
+    consultation-response:
+      async-enabled: ${CUSTOMER_AI_CONSULTATION_RESPONSE_ASYNC_ENABLED:false}
+      base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
+      connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
+      read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
   kafka:
     topics:
       payment: subscription.payment-events.v1
@@ -110,7 +117,16 @@ springdoc:
   api-docs:
     path: /api-docs
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
 logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:logstash}
   level:
     root: info
     com.chapchap.customer: info

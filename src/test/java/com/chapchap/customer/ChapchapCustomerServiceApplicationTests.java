@@ -11,6 +11,8 @@ import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessi
 import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackController;
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink;
 import com.chapchap.customer.global.config.CustomerAiRuntimeActivationGate;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
+import com.chapchap.customer.global.observability.customerai.MeteredLoggingCustomerAiDiagnosticSink;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
 import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
@@ -88,7 +90,11 @@ class ChapchapCustomerServiceApplicationTests {
         assertThat(webApplicationContext.getBeansOfType(ConsultationSummaryCallbackController.class)).isEmpty();
         assertThat(webApplicationContext.getBeansOfType(KnowledgeProcessingCallbackController.class)).isEmpty();
         assertThat(webApplicationContext.getBeansOfType(CurrentStateTrustedContextBoundary.class)).isEmpty();
-        assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticSink.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticSink.class))
+                .hasSize(1)
+                .allSatisfy((name, sink) -> assertThat(sink)
+                        .isInstanceOf(MeteredLoggingCustomerAiDiagnosticSink.class));
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticPublisher.class)).hasSize(1);
     }
 
     @Test
@@ -209,6 +215,12 @@ class ChapchapCustomerServiceApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value("00"))
                 .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void doesNotExposePrometheusEndpointThroughApplicationSecurity() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

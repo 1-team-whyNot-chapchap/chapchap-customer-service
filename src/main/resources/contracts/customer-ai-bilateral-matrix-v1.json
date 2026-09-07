@@ -9,7 +9,7 @@
     },
     "consumer": {
       "repository": "chapchap-customer-service",
-      "commit": "3f53d25acbef498eea24aede8e4ed4cc2b5d2e5f"
+      "commit": "a94dcfce45afe0d64c04943ca061d91d4dcb307d"
     }
   },
   "fixture": {

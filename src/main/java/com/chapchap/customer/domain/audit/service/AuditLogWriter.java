@@ -69,6 +69,26 @@ public class AuditLogWriter {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public void recordConsultationAiEscalated(
+            Consultation consultation,
+            String beforeStatus,
+            String reason,
+            LocalDateTime now
+    ) {
+        Map<String, Object> detail = consultationDetail(beforeStatus, consultation);
+        detail.put("reason", reason);
+        auditLogRepository.save(AuditLog.consultationChange(
+                null,
+                AuditActionType.CONSULTATION_ESCALATED,
+                String.valueOf(consultation.getId()),
+                MDC.get(TRACE_ID_KEY),
+                AuditActorType.SYSTEM,
+                detail,
+                now
+        ));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void recordConsultationAccepted(Long actorUserId, Consultation consultation, String beforeStatus, LocalDateTime now) {
         auditLogRepository.save(AuditLog.consultationChange(actorUserId, AuditActionType.CONSULTATION_ACCEPTED,
                 String.valueOf(consultation.getId()), MDC.get(TRACE_ID_KEY), AuditActorType.ADMIN,

@@ -10,4 +10,6 @@ public interface ConsultationMessageRepository extends JpaRepository<Consultatio
     List<ConsultationMessage> findByConsultation_IdOrderBySequenceNoAsc(Long consultationId);
 
     Optional<ConsultationMessage> findTopByConsultation_IdOrderBySequenceNoDesc(Long consultationId);
+
+    Optional<ConsultationMessage> findByTriggerMessageId(Long triggerMessageId);
 }

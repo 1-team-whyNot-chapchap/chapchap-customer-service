@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CustomerAiBilateralContractMatrixTest {
     private static final String PROVIDER_COMMIT = "6e2d036a46be01030e55c5a0cde261916bfb28c7";
-    private static final String CONSUMER_COMMIT = "3f53d25acbef498eea24aede8e4ed4cc2b5d2e5f";
+    private static final String CONSUMER_COMMIT = "a94dcfce45afe0d64c04943ca061d91d4dcb307d";
     private static final String FIXTURE_SHA256 =
             "ABE26EB47D4D509785FE2E1C9BA5345D2FE279B1AA0C73D0CAB19A4E38B78862";
     private static final Pattern GIT_COMMIT = Pattern.compile("[0-9a-f]{40}");

@@ -12,7 +12,7 @@ This copy lets Customer-Service verify the consumer shape without importing Cust
 
 - Runtime manifest: `src/main/resources/contracts/customer-ai-bilateral-matrix-v1.json`
 - Verified provider baseline: Customer-AI `6e2d036a46be01030e55c5a0cde261916bfb28c7`
-- Verified consumer baseline: Customer-Service `3f53d25acbef498eea24aede8e4ed4cc2b5d2e5f`
+- Verified consumer baseline: Customer-Service `a94dcfce45afe0d64c04943ca061d91d4dcb307d`
 - Candidate fixture SHA-256: `ABE26EB47D4D509785FE2E1C9BA5345D2FE279B1AA0C73D0CAB19A4E38B78862`
 
 The matrix records local provider and consumer evidence separately from isolated integration evidence. Runtime activation remains blocked until every matrix row and prerequisite is `PASS`, both runtime sides are explicitly enabled, and the contract is `CONFIRMED`.

@@ -36,6 +36,33 @@ class CustomerAiDiagnosticEventTest {
     }
 
     @Test
+    void distinguishesTransportResultFromPersistedLifecycleAndFallback() {
+        CustomerAiDiagnosticEvent applied = CustomerAiDiagnosticEvent.consultationLifecycleApplied(
+                REQUEST_ID,
+                "trace-123",
+                501,
+                CustomerAiConsultationResult.Route.POLICY,
+                CustomerAiDiagnosticOutcome.ANSWER
+        );
+        CustomerAiDiagnosticEvent fallback = CustomerAiDiagnosticEvent.consultationLifecycleFallback(
+                REQUEST_ID,
+                "trace-123",
+                501,
+                CustomerAiDiagnosticFailureCode.TIMEOUT
+        );
+
+        assertThat(applied.eventType())
+                .isEqualTo(CustomerAiDiagnosticEventType.CONSULTATION_LIFECYCLE_APPLIED);
+        assertThat(applied.metricDimensions()).containsEntry("route", "POLICY");
+        assertThat(fallback.eventType())
+                .isEqualTo(CustomerAiDiagnosticEventType.CONSULTATION_LIFECYCLE_FALLBACK);
+        assertThat(fallback.outcome()).isEqualTo(CustomerAiDiagnosticOutcome.HANDOFF);
+        assertThat(fallback.failureCode()).isEqualTo(CustomerAiDiagnosticFailureCode.TIMEOUT);
+        assertThat(fallback.metricDimensions()).doesNotContainKeys(
+                "requestId", "traceId", "consultationId", "message", "answer", "evidence");
+    }
+
+    @Test
     void excludesCorrelationIdsAndMeasurementsFromMetricDimensions() {
         CustomerAiDiagnosticEvent event = CustomerAiDiagnosticEvent.knowledgeCallbackFailed(
                 REQUEST_ID,
@@ -100,5 +127,26 @@ class CustomerAiDiagnosticEventTest {
         )).isEqualTo(CustomerAiDiagnosticFailureCode.TIMEOUT);
         assertThat(CustomerAiDiagnosticFailureCode.from(null))
                 .isEqualTo(CustomerAiDiagnosticFailureCode.CONTRACT_ERROR);
+    }
+
+    @Test
+    void createsCurrentStateDenialWithOnlyAllowlistedMetricDimensions() {
+        CustomerAiDiagnosticEvent event = CustomerAiDiagnosticEvent.currentStateAccessDenied(
+                REQUEST_ID,
+                "trace-denied",
+                501,
+                CurrentStateCapability.PAYMENT_CURRENT,
+                CustomerAiDiagnosticFailureCode.FORBIDDEN
+        );
+
+        assertThat(event.eventType()).isEqualTo(CustomerAiDiagnosticEventType.CURRENT_STATE_ACCESS_DENIED);
+        assertThat(event.outcome()).isEqualTo(CustomerAiDiagnosticOutcome.ACCESS_DENIED);
+        assertThat(event.metricDimensions()).containsExactlyInAnyOrderEntriesOf(java.util.Map.of(
+                "eventType", "CURRENT_STATE_ACCESS_DENIED",
+                "outcome", "ACCESS_DENIED",
+                "capabilityId", "CAP-PAYMENT-CURRENT",
+                "failureCode", "FORBIDDEN",
+                "retryable", "false"
+        ));
     }
 }

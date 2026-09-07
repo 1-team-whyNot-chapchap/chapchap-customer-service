@@ -5,6 +5,7 @@ import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
 import com.chapchap.customer.domain.consultation.entity.ConsultationSenderType;
 import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.event.ConsultationAiResponseRequestedEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.response.AdminConsultationResponse;
 import com.chapchap.customer.domain.audit.service.AuditLogWriter;
@@ -37,14 +38,24 @@ public class ConsultationService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
-    public ConsultationCreatedResponse createConsultation(Long userId, ConsultationCreateRequest request) {
+    public ConsultationCreatedResponse createConsultation(
+            GatewayUserPrincipal principal,
+            ConsultationCreateRequest request
+    ) {
+        Long userId = requireUserId(principal);
         LocalDateTime now = LocalDateTime.now();
         Consultation consultation = consultationRepository.save(Consultation.create(userId, now));
         ConsultationMessage firstMessage = consultationMessageRepository.save(
                 ConsultationMessage.firstUserMessage(consultation, userId, request.content().trim(), now)
         );
 
-        return ConsultationCreatedResponse.of(consultation, ConsultationMessageResponse.from(firstMessage));
+        ConsultationMessageResponse messageResponse = ConsultationMessageResponse.from(firstMessage);
+        applicationEventPublisher.publishEvent(new ConsultationMessageSavedEvent(
+                consultation.getId(), messageResponse));
+        applicationEventPublisher.publishEvent(new ConsultationAiResponseRequestedEvent(
+                consultation.getId(), firstMessage.getId(), userId, principal.role()));
+
+        return ConsultationCreatedResponse.of(consultation, messageResponse);
     }
 
     @Transactional(readOnly = true)
@@ -105,7 +116,9 @@ public class ConsultationService {
         Long senderUserId = requireUserId(principal);
         ConsultationSenderType senderType = resolveMessageSenderType(principal, consultation, senderUserId);
 
-        if (consultation.getStatus() != ConsultationStatus.IN_PROGRESS) {
+        boolean userAiMessage = senderType == ConsultationSenderType.USER
+                && consultation.getStatus() == ConsultationStatus.AI_HANDLING;
+        if (!userAiMessage && consultation.getStatus() != ConsultationStatus.IN_PROGRESS) {
             throw new ConsultationStateException("진행 중인 상담에서만 메시지를 보낼 수 있습니다.");
         }
 
@@ -124,6 +137,10 @@ public class ConsultationService {
         ));
         ConsultationMessageResponse response = ConsultationMessageResponse.from(savedMessage);
         applicationEventPublisher.publishEvent(new ConsultationMessageSavedEvent(consultationId, response));
+        if (userAiMessage) {
+            applicationEventPublisher.publishEvent(new ConsultationAiResponseRequestedEvent(
+                    consultationId, savedMessage.getId(), senderUserId, principal.role()));
+        }
         return response;
     }
 
