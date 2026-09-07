@@ -26,6 +26,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -93,7 +94,9 @@ public class ConsultationAiLifecycleStateService {
                 event.triggerMessageId(),
                 subject,
                 trigger.getContent(),
-                context
+                context,
+                knowledgeVersionRepository.findApprovedVersionIds(
+                        KnowledgeProcessingStatus.READY, LocalDateTime.now(ZoneId.of("Asia/Seoul")))
         )));
     }
 
@@ -119,6 +122,7 @@ public class ConsultationAiLifecycleStateService {
 
         ConsultationMessage aiMessage = null;
         if (result.decision() != CustomerAiConsultationResult.Decision.HANDOFF) {
+            validateEvidence(command, result.evidence(), now);
             int nextSequence = messageRepository
                     .findTopByConsultation_IdOrderBySequenceNoDesc(command.consultationId())
                     .map(message -> message.getSequenceNo() + 1)
@@ -191,7 +195,7 @@ public class ConsultationAiLifecycleStateService {
         List<ConsultationMessageSource> sources = evidence.stream()
                 .map(item -> {
                     KnowledgeVersion version = versions.get(item.knowledgeVersionId());
-                    if (version == null || version.getProcessingStatus() != KnowledgeProcessingStatus.READY) {
+                    if (!isApproved(version, now)) {
                         throw new ConsultationStateException("AI 답변 Knowledge Version을 검증할 수 없습니다.");
                     }
                     return ConsultationMessageSource.create(
@@ -211,6 +215,27 @@ public class ConsultationAiLifecycleStateService {
         String beforeStatus = consultation.getStatus().name();
         if (consultation.requestAdminHandoff(now)) {
             auditLogWriter.recordConsultationAiEscalated(consultation, beforeStatus, reason, now);
+        }
+    }
+
+    private boolean isApproved(KnowledgeVersion version, LocalDateTime now) {
+        return version != null && version.getProcessingStatus() == KnowledgeProcessingStatus.READY
+                && version.isActive() && !version.getEffectiveFrom().isAfter(now);
+    }
+
+    private void validateEvidence(CustomerAiConsultationCommand command,
+            List<CustomerAiConsultationResult.Evidence> evidence, LocalDateTime now) {
+        List<Long> ids = evidence.stream()
+                .map(CustomerAiConsultationResult.Evidence::knowledgeVersionId).distinct().toList();
+        if (!command.knowledgeVersionIds().containsAll(ids)) {
+            throw new ConsultationStateException("AI 답변에 승인되지 않은 Knowledge Version이 포함되어 있습니다.");
+        }
+        if (ids.isEmpty()) {
+            return;
+        }
+        List<KnowledgeVersion> versions = knowledgeVersionRepository.findAllById(ids);
+        if (versions.size() != ids.size() || versions.stream().anyMatch(v -> !isApproved(v, now))) {
+            throw new ConsultationStateException("AI 답변 Knowledge Version이 현재 활성 상태가 아닙니다.");
         }
     }
 }

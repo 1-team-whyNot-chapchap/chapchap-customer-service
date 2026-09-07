@@ -12,7 +12,8 @@ record CustomerAiConsultationRequest(
         long triggerMessageId,
         Subject subject,
         String message,
-        List<String> conversationContext
+        List<String> conversationContext,
+        List<Long> knowledgeVersionIds
 ) {
     static CustomerAiConsultationRequest from(CustomerAiConsultationCommand command) {
         CustomerAiSubjectAssertionRequest authenticatedSubject = command.subject();
@@ -27,7 +28,8 @@ record CustomerAiConsultationRequest(
                         authenticatedSubject.allowedAiScopes()
                 ),
                 command.message(),
-                command.conversationContext()
+                command.conversationContext(),
+                command.knowledgeVersionIds()
         );
     }
 

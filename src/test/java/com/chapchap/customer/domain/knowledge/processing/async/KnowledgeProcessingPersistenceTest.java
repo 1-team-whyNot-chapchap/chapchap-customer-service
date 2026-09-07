@@ -1,6 +1,10 @@
 package com.chapchap.customer.domain.knowledge.processing.async;
 
 import jakarta.persistence.EntityManager;
+import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
+import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
@@ -21,6 +25,37 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
         }
 )
 class KnowledgeProcessingPersistenceTest {
+    @Autowired
+    private KnowledgeVersionRepository versionRepository;
+
+    @Test
+    void approvedVersionsRequireActiveReadyAndEffectiveDateIncludingBoundary() {
+        LocalDateTime now = LocalDateTime.of(2026, 9, 7, 16, 0);
+        KnowledgeVersion approved = version(1L, now);
+        approved.startProcessing(now);
+        approved.completeProcessing(now);
+        approved.activate(now);
+        KnowledgeVersion inactive = version(2L, now);
+        inactive.startProcessing(now);
+        inactive.completeProcessing(now);
+        KnowledgeVersion future = version(3L, now.plusSeconds(1));
+        future.startProcessing(now);
+        future.completeProcessing(now);
+        ReflectionTestUtils.setField(future, "active", true);
+        KnowledgeVersion unprocessed = version(4L, now);
+        ReflectionTestUtils.setField(unprocessed, "active", true);
+        versionRepository.saveAllAndFlush(java.util.List.of(approved, inactive, future, unprocessed));
+        entityManager.clear();
+
+        assertThat(versionRepository.findApprovedVersionIds(KnowledgeProcessingStatus.READY, now))
+                .containsExactly(approved.getId());
+    }
+
+    private KnowledgeVersion version(long documentId, LocalDateTime effectiveFrom) {
+        return KnowledgeVersion.uploaded(documentId, "v1", "policy/" + documentId + ".pdf",
+                "policy.pdf", "application/pdf", 100L, effectiveFrom, 42L, effectiveFrom);
+    }
+
     @Autowired
     private KnowledgeProcessingJobRepository jobRepository;
 
