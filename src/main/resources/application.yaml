@@ -66,6 +66,17 @@ customer:
       subject-lifetime-seconds: ${CUSTOMER_AI_SUBJECT_LIFETIME_SECONDS:60}
       connect-timeout-milliseconds: ${AUTH_SERVICE_CONNECT_TIMEOUT_MILLISECONDS:1000}
       read-timeout-milliseconds: ${AUTH_SERVICE_READ_TIMEOUT_MILLISECONDS:3000}
+    callback-auth:
+      enabled: ${CUSTOMER_AI_CALLBACK_AUTH_ENABLED:false}
+      jwks-url: ${AUTH_SERVICE_JWKS_URL:https://auth-service/.well-known/jwks.json}
+      issuer: ${CUSTOMER_AI_CALLBACK_ISSUER:chapchap-auth-service}
+      audience: ${CUSTOMER_AI_CALLBACK_AUDIENCE:chapchap-customer-service}
+      subject: ${CUSTOMER_AI_CALLBACK_SUBJECT:customer-ai}
+      scope: ${CUSTOMER_AI_CALLBACK_SCOPE:customer-ai.callback}
+      maximum-lifetime-seconds: ${CUSTOMER_AI_CALLBACK_MAXIMUM_LIFETIME_SECONDS:300}
+      jwks-cache-seconds: ${AUTH_SERVICE_JWKS_CACHE_SECONDS:300}
+      connect-timeout-milliseconds: ${AUTH_SERVICE_JWKS_CONNECT_TIMEOUT_MILLISECONDS:1000}
+      read-timeout-milliseconds: ${AUTH_SERVICE_JWKS_READ_TIMEOUT_MILLISECONDS:3000}
     knowledge-processing:
       base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
       connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}

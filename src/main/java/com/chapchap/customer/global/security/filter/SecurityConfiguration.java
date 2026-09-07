@@ -2,6 +2,8 @@ package com.chapchap.customer.global.security.filter;
 
 import com.chapchap.customer.global.response.GlobalResponse;
 import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.domain.consultation.summary.ConsultationSummaryCallbackController;
+import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackController;
 import com.chapchap.customer.global.security.customerai.CustomerAiSubjectJwksController;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +45,11 @@ public class SecurityConfiguration {
                                 "/swagger-ui.html"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, CustomerAiSubjectJwksController.PATH).permitAll()
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                KnowledgeProcessingCallbackController.PATH,
+                                ConsultationSummaryCallbackController.PATH
+                        ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/customer/faqs", "/api/customer/faqs/**").permitAll()
                         .requestMatchers("/ws/customer/consultations/**").authenticated()
                         .requestMatchers("/api/customer/**").authenticated()
