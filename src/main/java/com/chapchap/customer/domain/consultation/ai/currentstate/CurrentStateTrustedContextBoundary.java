@@ -1,6 +1,7 @@
 package com.chapchap.customer.domain.consultation.ai.currentstate;
 
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
@@ -30,10 +31,17 @@ public final class CurrentStateTrustedContextBoundary {
 
         GatewayUserPrincipal principal = request.principal();
         if (principal.role() == null || !ALLOWED_ROLES.contains(principal.role())) {
+            publishDenied(request, CustomerAiDiagnosticFailureCode.FORBIDDEN);
             throw new CurrentStateAccessException("Authenticated subject is not allowed.");
         }
 
-        long userId = parseUserId(principal.userId());
+        long userId;
+        try {
+            userId = parseUserId(principal.userId());
+        } catch (CurrentStateAccessException exception) {
+            publishDenied(request, CustomerAiDiagnosticFailureCode.AUTHENTICATION_REJECTED);
+            throw exception;
+        }
         TrustedCurrentStateContext context = new TrustedCurrentStateContext(
                 userId,
                 principal.role(),
@@ -46,6 +54,16 @@ public final class CurrentStateTrustedContextBoundary {
                     context.requestId(), traceId, context.consultationId(), capability));
         }
         return context;
+    }
+
+    private void publishDenied(
+            CurrentStateAccessRequest request,
+            CustomerAiDiagnosticFailureCode failureCode
+    ) {
+        for (CurrentStateCapability capability : request.capabilities()) {
+            diagnostics.publish(traceId -> CustomerAiDiagnosticEvent.currentStateAccessDenied(
+                    request.requestId(), traceId, request.consultationId(), capability, failureCode));
+        }
     }
 
     private long parseUserId(String value) {
