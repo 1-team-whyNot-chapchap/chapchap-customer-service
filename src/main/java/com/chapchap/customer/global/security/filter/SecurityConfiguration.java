@@ -2,6 +2,7 @@ package com.chapchap.customer.global.security.filter;
 
 import com.chapchap.customer.global.response.GlobalResponse;
 import com.chapchap.customer.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.security.customerai.CustomerAiSubjectJwksController;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -41,6 +42,7 @@ public class SecurityConfiguration {
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
+                        .requestMatchers(HttpMethod.GET, CustomerAiSubjectJwksController.PATH).permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/customer/faqs", "/api/customer/faqs/**").permitAll()
                         .requestMatchers("/ws/customer/consultations/**").authenticated()
                         .requestMatchers("/api/customer/**").authenticated()

@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.knowledge.processing;
 
-import com.chapchap.customer.global.config.CustomerAiKnowledgeProcessingProperties;
 import com.chapchap.customer.global.error.custom.knowledge.KnowledgeProcessingContractException;
+import com.chapchap.customer.global.security.customerai.CustomerAiServiceTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -27,19 +27,17 @@ public class CustomerAiKnowledgeProcessingClient implements KnowledgeProcessingC
     );
 
     private final RestClient customerAiKnowledgeProcessingRestClient;
-    private final CustomerAiKnowledgeProcessingProperties properties;
     private final ObjectMapper objectMapper;
+    private final CustomerAiServiceTokenProvider serviceTokenProvider;
 
     @Override
     public KnowledgeProcessingResult process(KnowledgeProcessingRequest request) {
-        if (properties.getServiceToken().isBlank()) {
-            throw new KnowledgeProcessingContractException("Customer-AI 서비스 계정 토큰이 설정되지 않았습니다.");
-        }
+        String serviceToken = serviceToken();
 
         try {
             KnowledgeProcessingResponse response = customerAiKnowledgeProcessingRestClient.post()
                     .uri("/internal/v1/knowledge-processing")
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + properties.getServiceToken())
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + serviceToken)
                     .contentType(MediaType.APPLICATION_JSON)
                     .body(request)
                     .retrieve()
@@ -47,6 +45,21 @@ public class CustomerAiKnowledgeProcessingClient implements KnowledgeProcessingC
             return toResult(request.knowledgeVersionId(), response);
         } catch (RestClientResponseException exception) {
             return toResult(request.knowledgeVersionId(), readFailureResponse(exception));
+        }
+    }
+
+    private String serviceToken() {
+        try {
+            String token = serviceTokenProvider.getServiceToken();
+            if (token == null || token.isBlank() || token.chars().anyMatch(Character::isWhitespace)
+                    || token.split("\\.", -1).length != 3) {
+                throw new KnowledgeProcessingContractException("Customer-AI 내부 인증을 사용할 수 없습니다.");
+            }
+            return token;
+        } catch (KnowledgeProcessingContractException exception) {
+            throw exception;
+        } catch (RuntimeException exception) {
+            throw new KnowledgeProcessingContractException("Customer-AI 내부 인증을 사용할 수 없습니다.");
         }
     }
 
