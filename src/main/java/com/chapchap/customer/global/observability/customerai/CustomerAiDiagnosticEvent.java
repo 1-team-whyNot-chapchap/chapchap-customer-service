@@ -311,6 +311,20 @@ public final class CustomerAiDiagnosticEvent {
         );
     }
 
+    public static CustomerAiDiagnosticEvent currentStateAccessDenied(
+            UUID requestId,
+            String traceId,
+            long consultationId,
+            CurrentStateCapability capabilityId,
+            CustomerAiDiagnosticFailureCode failureCode
+    ) {
+        return new CustomerAiDiagnosticEvent(
+                CustomerAiDiagnosticEventType.CURRENT_STATE_ACCESS_DENIED,
+                requestId, traceId, consultationId, null, null, null, Objects.requireNonNull(capabilityId),
+                CustomerAiDiagnosticOutcome.ACCESS_DENIED, Objects.requireNonNull(failureCode), false, null, null
+        );
+    }
+
     private static CustomerAiDiagnosticEvent failure(
             CustomerAiDiagnosticEventType eventType,
             UUID requestId,

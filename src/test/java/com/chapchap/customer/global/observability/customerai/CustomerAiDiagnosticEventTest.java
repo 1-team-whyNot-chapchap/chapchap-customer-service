@@ -128,4 +128,25 @@ class CustomerAiDiagnosticEventTest {
         assertThat(CustomerAiDiagnosticFailureCode.from(null))
                 .isEqualTo(CustomerAiDiagnosticFailureCode.CONTRACT_ERROR);
     }
+
+    @Test
+    void createsCurrentStateDenialWithOnlyAllowlistedMetricDimensions() {
+        CustomerAiDiagnosticEvent event = CustomerAiDiagnosticEvent.currentStateAccessDenied(
+                REQUEST_ID,
+                "trace-denied",
+                501,
+                CurrentStateCapability.PAYMENT_CURRENT,
+                CustomerAiDiagnosticFailureCode.FORBIDDEN
+        );
+
+        assertThat(event.eventType()).isEqualTo(CustomerAiDiagnosticEventType.CURRENT_STATE_ACCESS_DENIED);
+        assertThat(event.outcome()).isEqualTo(CustomerAiDiagnosticOutcome.ACCESS_DENIED);
+        assertThat(event.metricDimensions()).containsExactlyInAnyOrderEntriesOf(java.util.Map.of(
+                "eventType", "CURRENT_STATE_ACCESS_DENIED",
+                "outcome", "ACCESS_DENIED",
+                "capabilityId", "CAP-PAYMENT-CURRENT",
+                "failureCode", "FORBIDDEN",
+                "retryable", "false"
+        ));
+    }
 }
