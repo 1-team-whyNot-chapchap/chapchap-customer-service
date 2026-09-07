@@ -2,7 +2,9 @@ package com.chapchap.customer.domain.knowledge.repository;
 
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -14,6 +16,10 @@ public interface KnowledgeVersionRepository extends JpaRepository<KnowledgeVersi
     boolean existsByKnowledgeDocumentIdAndVersion(Long knowledgeDocumentId, String version);
 
     Optional<KnowledgeVersion> findByKnowledgeDocumentIdAndActiveTrue(Long knowledgeDocumentId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select knowledgeVersion from KnowledgeVersion knowledgeVersion where knowledgeVersion.id = :knowledgeVersionId")
+    Optional<KnowledgeVersion> findByIdForUpdate(@Param("knowledgeVersionId") Long knowledgeVersionId);
 
     Optional<KnowledgeVersion> findFirstByKnowledgeDocumentIdAndProcessingStatusAndActiveFalseAndEffectiveFromLessThanEqualOrderByEffectiveFromDescIdDesc(
             Long knowledgeDocumentId,
