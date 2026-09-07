@@ -25,6 +25,7 @@ customer:
     callback-auth:
       enabled: false
     knowledge-processing:
+      async-enabled: false
       base-url: http://localhost:8085
       connect-timeout-milliseconds: 1000
       read-timeout-milliseconds: 10000
