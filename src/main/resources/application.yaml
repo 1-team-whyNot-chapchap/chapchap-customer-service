@@ -52,6 +52,8 @@ customer:
       enabled: ${KNOWLEDGE_ACTIVATION_SCHEDULER_ENABLED:true}
       fixed-delay: ${KNOWLEDGE_ACTIVATION_SCHEDULER_FIXED_DELAY:60000}
   ai:
+    observability:
+      enabled: ${CUSTOMER_AI_OBSERVABILITY_ENABLED:true}
     internal-auth:
       enabled: ${CUSTOMER_AI_INTERNAL_AUTH_ENABLED:false}
       auth-base-url: ${AUTH_SERVICE_BASE_URL:https://auth-service}
@@ -108,7 +110,16 @@ springdoc:
   api-docs:
     path: /api-docs
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+
 logging:
+  structured:
+    format:
+      console: ${LOGGING_STRUCTURED_FORMAT_CONSOLE:logstash}
   level:
     root: info
     com.chapchap.customer: info
