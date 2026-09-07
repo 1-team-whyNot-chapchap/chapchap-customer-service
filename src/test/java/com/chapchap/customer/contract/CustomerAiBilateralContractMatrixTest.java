@@ -36,7 +36,7 @@ class CustomerAiBilateralContractMatrixTest {
             "CHROMA_UNAVAILABLE",
             "CALLBACK_AUTH_UNCONFIRMED",
             "MCP_TRANSPORT_UNCONFIRMED",
-            "TRACE_METRIC_BACKEND_UNCONFIRMED",
+            "STRUCTURED_LOG_BACKEND_UNVERIFIED",
             "DOMAIN_READ_ENDPOINTS_UNCONFIRMED",
             "ACTIVE_KNOWLEDGE_CONTRACT_UNCONFIRMED",
             "ISOLATED_ENVIRONMENT_UNAVAILABLE"
@@ -113,7 +113,7 @@ class CustomerAiBilateralContractMatrixTest {
     void keepsEveryRuntimePrerequisiteAndCandidateComponentBlocked() {
         JsonNode prerequisites = matrix.required("runtimePrerequisites");
         assertExactFields(prerequisites, "authJwks", "privateMinio", "chroma",
-                "callbackAuthentication", "mcpTransport", "traceMetricBackend");
+                "callbackAuthentication", "mcpTransport", "structuredLogBackend");
         prerequisites.properties().forEach(entry -> assertThat(entry.getValue().textValue()).isEqualTo("BLOCKED"));
 
         JsonNode activation = matrix.required("runtimeActivation");

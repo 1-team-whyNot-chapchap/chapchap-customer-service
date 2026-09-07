@@ -81,6 +81,15 @@ public class Consultation {
         return true;
     }
 
+    public void close(LocalDateTime now) {
+        if (status == ConsultationStatus.CLOSED) {
+            throw new ConsultationStateException("이미 종료된 상담입니다.");
+        }
+        status = ConsultationStatus.CLOSED;
+        closedAt = now;
+        updatedAt = now;
+    }
+
     public Long getId() {
         return id;
     }
@@ -103,6 +112,10 @@ public class Consultation {
 
     public LocalDateTime getAssignedAt() {
         return assignedAt;
+    }
+
+    public LocalDateTime getClosedAt() {
+        return closedAt;
     }
 
     public LocalDateTime getCreatedAt() {

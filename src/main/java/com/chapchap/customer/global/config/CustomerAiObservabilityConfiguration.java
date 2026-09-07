@@ -4,8 +4,8 @@ import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosti
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink;
 import com.chapchap.customer.global.observability.customerai.CustomerAiTraceIdProvider;
 import com.chapchap.customer.global.observability.customerai.MdcCustomerAiTraceIdProvider;
-import com.chapchap.customer.global.observability.customerai.MeteredLoggingCustomerAiDiagnosticSink;
-import io.micrometer.core.instrument.MeterRegistry;
+import com.chapchap.customer.global.observability.customerai.LoggingCustomerAiDiagnosticSink;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -22,8 +22,8 @@ public class CustomerAiObservabilityConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    CustomerAiDiagnosticSink customerAiDiagnosticSink(MeterRegistry meterRegistry) {
-        return new MeteredLoggingCustomerAiDiagnosticSink(meterRegistry);
+    CustomerAiDiagnosticSink customerAiDiagnosticSink() {
+        return new LoggingCustomerAiDiagnosticSink();
     }
 
     @Bean

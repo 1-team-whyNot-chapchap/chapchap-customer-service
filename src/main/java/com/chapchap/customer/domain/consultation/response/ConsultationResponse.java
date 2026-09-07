@@ -12,7 +12,8 @@ public record ConsultationResponse(
         LocalDateTime updatedAt,
         LocalDateTime escalatedAt,
         Long assignedAdminId,
-        LocalDateTime assignedAt
+        LocalDateTime assignedAt,
+        LocalDateTime closedAt
 ) {
     public static ConsultationResponse from(Consultation consultation) {
         return new ConsultationResponse(
@@ -22,7 +23,8 @@ public record ConsultationResponse(
                 consultation.getUpdatedAt(),
                 consultation.getEscalatedAt(),
                 consultation.getAssignedAdminId(),
-                consultation.getAssignedAt()
+                consultation.getAssignedAt(),
+                consultation.getClosedAt()
         );
     }
 }

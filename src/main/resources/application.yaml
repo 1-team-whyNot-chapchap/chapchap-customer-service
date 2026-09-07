@@ -91,6 +91,8 @@ customer:
       base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
       connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
       read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
+    consultation-summary:
+      async-enabled: ${CUSTOMER_AI_CONSULTATION_SUMMARY_ASYNC_ENABLED:false}
   kafka:
     topics:
       payment: subscription.payment-events.v1
@@ -121,7 +123,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,prometheus
+        include: health
 
 logging:
   structured:
