@@ -6,9 +6,13 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import java.time.Clock;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.springframework.test.web.client.ExpectedCount.twice;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.content;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
@@ -19,10 +23,10 @@ class AuthServiceCustomerAiServiceTokenProviderTest {
     private static final String ENDPOINT = "https://auth.internal/internal/v1/service-tokens";
 
     @Test
-    void requestsANewClientCredentialsTokenForEveryInvocation() {
+    void reusesAClientCredentialsTokenUntilItsRefreshWindow() {
         RestClient.Builder builder = RestClient.builder().baseUrl("https://auth.internal");
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
-        server.expect(twice(), requestTo(ENDPOINT))
+        server.expect(requestTo(ENDPOINT))
                 .andExpect(method(HttpMethod.POST))
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_FORM_URLENCODED))
                 .andExpect(content().string(org.hamcrest.Matchers.allOf(
@@ -43,6 +47,23 @@ class AuthServiceCustomerAiServiceTokenProviderTest {
 
         assertThat(provider.getServiceToken()).isEqualTo("header.payload.signature");
         assertThat(provider.getServiceToken()).isEqualTo("header.payload.signature");
+        server.verify();
+    }
+
+    @Test
+    void requestsANewTokenAfterItsRefreshWindow() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://auth.internal");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        server.expect(requestTo(ENDPOINT)).andRespond(withSuccess(validResponse("first.token.value", 10),
+                MediaType.APPLICATION_JSON));
+        server.expect(requestTo(ENDPOINT)).andRespond(withSuccess(validResponse("second.token.value", 10),
+                MediaType.APPLICATION_JSON));
+        MutableClock clock = new MutableClock(Instant.parse("2026-09-07T00:00:00Z"));
+        AuthServiceCustomerAiServiceTokenProvider provider = provider(builder.build(), clock);
+
+        assertThat(provider.getServiceToken()).isEqualTo("first.token.value");
+        clock.advance(Duration.ofSeconds(5));
+        assertThat(provider.getServiceToken()).isEqualTo("second.token.value");
         server.verify();
     }
 
@@ -81,12 +102,55 @@ class AuthServiceCustomerAiServiceTokenProviderTest {
     }
 
     private AuthServiceCustomerAiServiceTokenProvider provider(RestClient restClient) {
+        return provider(restClient, Clock.systemUTC());
+    }
+
+    private AuthServiceCustomerAiServiceTokenProvider provider(RestClient restClient, Clock clock) {
         return new AuthServiceCustomerAiServiceTokenProvider(
                 restClient,
                 "/internal/v1/service-tokens",
                 "customer-service",
                 "secret",
                 "chapchap-customer-ai",
-                "customer-ai.invoke");
+                "customer-ai.invoke",
+                clock);
+    }
+
+    private String validResponse(String token, long expiresIn) {
+        return """
+                {
+                  "access_token": "%s",
+                  "token_type": "Bearer",
+                  "expires_in": %d,
+                  "scope": "customer-ai.invoke"
+                }
+                """.formatted(token, expiresIn);
+    }
+
+    private static final class MutableClock extends Clock {
+        private Instant instant;
+
+        private MutableClock(Instant instant) {
+            this.instant = instant;
+        }
+
+        private void advance(Duration duration) {
+            instant = instant.plus(duration);
+        }
+
+        @Override
+        public ZoneId getZone() {
+            return ZoneId.of("Asia/Seoul");
+        }
+
+        @Override
+        public Clock withZone(ZoneId zone) {
+            return this;
+        }
+
+        @Override
+        public Instant instant() {
+            return instant;
+        }
     }
 }
