@@ -82,6 +82,11 @@ customer:
       base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
       connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
       read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
+    consultation-response:
+      async-enabled: ${CUSTOMER_AI_CONSULTATION_RESPONSE_ASYNC_ENABLED:false}
+      base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
+      connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
+      read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
   kafka:
     topics:
       payment: subscription.payment-events.v1

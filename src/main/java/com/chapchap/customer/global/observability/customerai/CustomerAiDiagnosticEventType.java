@@ -3,6 +3,8 @@ package com.chapchap.customer.global.observability.customerai;
 public enum CustomerAiDiagnosticEventType {
     CONSULTATION_RESULT,
     CONSULTATION_FAILED,
+    CONSULTATION_LIFECYCLE_APPLIED,
+    CONSULTATION_LIFECYCLE_FALLBACK,
     KNOWLEDGE_SUBMITTED,
     KNOWLEDGE_SUBMISSION_FAILED,
     KNOWLEDGE_CALLBACK_RESULT,
