@@ -22,6 +22,8 @@ customer:
   ai:
     internal-auth:
       enabled: false
+    callback-auth:
+      enabled: false
     knowledge-processing:
       base-url: http://localhost:8085
       connect-timeout-milliseconds: 1000

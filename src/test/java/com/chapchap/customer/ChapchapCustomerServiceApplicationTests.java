@@ -4,9 +4,11 @@ import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.consultation.ai.HttpCustomerAiConsultationClient;
 import com.chapchap.customer.domain.consultation.ai.currentstate.CurrentStateTrustedContextBoundary;
 import com.chapchap.customer.domain.consultation.summary.ConsultationSummaryCallbackConsumer;
+import com.chapchap.customer.domain.consultation.summary.ConsultationSummaryCallbackController;
 import com.chapchap.customer.domain.consultation.summary.HttpCustomerAiConsultationSummaryClient;
 import com.chapchap.customer.domain.knowledge.processing.async.HttpCustomerAiKnowledgeJobClient;
 import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackConsumer;
+import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackController;
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
@@ -81,6 +83,8 @@ class ChapchapCustomerServiceApplicationTests {
         assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiConsultationSummaryClient.class)).isEmpty();
         assertThat(webApplicationContext.getBeansOfType(KnowledgeProcessingCallbackConsumer.class)).isEmpty();
         assertThat(webApplicationContext.getBeansOfType(ConsultationSummaryCallbackConsumer.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(ConsultationSummaryCallbackController.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(KnowledgeProcessingCallbackController.class)).isEmpty();
         assertThat(webApplicationContext.getBeansOfType(CurrentStateTrustedContextBoundary.class)).isEmpty();
         assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticSink.class)).isEmpty();
     }
