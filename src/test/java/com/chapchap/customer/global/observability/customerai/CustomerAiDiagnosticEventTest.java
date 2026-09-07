@@ -36,6 +36,33 @@ class CustomerAiDiagnosticEventTest {
     }
 
     @Test
+    void distinguishesTransportResultFromPersistedLifecycleAndFallback() {
+        CustomerAiDiagnosticEvent applied = CustomerAiDiagnosticEvent.consultationLifecycleApplied(
+                REQUEST_ID,
+                "trace-123",
+                501,
+                CustomerAiConsultationResult.Route.POLICY,
+                CustomerAiDiagnosticOutcome.ANSWER
+        );
+        CustomerAiDiagnosticEvent fallback = CustomerAiDiagnosticEvent.consultationLifecycleFallback(
+                REQUEST_ID,
+                "trace-123",
+                501,
+                CustomerAiDiagnosticFailureCode.TIMEOUT
+        );
+
+        assertThat(applied.eventType())
+                .isEqualTo(CustomerAiDiagnosticEventType.CONSULTATION_LIFECYCLE_APPLIED);
+        assertThat(applied.metricDimensions()).containsEntry("route", "POLICY");
+        assertThat(fallback.eventType())
+                .isEqualTo(CustomerAiDiagnosticEventType.CONSULTATION_LIFECYCLE_FALLBACK);
+        assertThat(fallback.outcome()).isEqualTo(CustomerAiDiagnosticOutcome.HANDOFF);
+        assertThat(fallback.failureCode()).isEqualTo(CustomerAiDiagnosticFailureCode.TIMEOUT);
+        assertThat(fallback.metricDimensions()).doesNotContainKeys(
+                "requestId", "traceId", "consultationId", "message", "answer", "evidence");
+    }
+
+    @Test
     void excludesCorrelationIdsAndMeasurementsFromMetricDimensions() {
         CustomerAiDiagnosticEvent event = CustomerAiDiagnosticEvent.knowledgeCallbackFailed(
                 REQUEST_ID,
