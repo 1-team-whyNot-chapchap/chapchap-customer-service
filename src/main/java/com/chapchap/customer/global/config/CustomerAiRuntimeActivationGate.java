@@ -83,7 +83,8 @@ public final class CustomerAiRuntimeActivationGate implements InitializingBean {
 
     private void requireActive() {
         boolean allRuntimeEnabled = RUNTIME_FLAGS.stream().allMatch(this::isEnabled);
-        if (!allRuntimeEnabled || !manifestVerifier.isReady(readManifest())) {
+        boolean logsEnabled = environment.getProperty("customer.ai.observability.enabled", Boolean.class, true);
+        if (!allRuntimeEnabled || !logsEnabled || !manifestVerifier.isReady(readManifest())) {
             throw new IllegalStateException("Customer-AI 운영 활성화 증거가 완료되지 않았습니다.");
         }
     }

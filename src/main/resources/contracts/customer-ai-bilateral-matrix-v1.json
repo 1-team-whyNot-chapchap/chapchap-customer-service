@@ -22,7 +22,7 @@
     "chroma": "BLOCKED",
     "callbackAuthentication": "BLOCKED",
     "mcpTransport": "BLOCKED",
-    "traceMetricBackend": "BLOCKED"
+    "structuredLogBackend": "BLOCKED"
   },
   "runtimeActivation": {
     "providerRoutersMounted": false,
@@ -89,7 +89,7 @@
       "provider": "PASS",
       "consumer": "PASS",
       "isolatedIntegration": "BLOCKED",
-      "blockers": ["TRACE_METRIC_BACKEND_UNCONFIRMED"],
+      "blockers": ["STRUCTURED_LOG_BACKEND_UNVERIFIED"],
       "providerEvidence": ["tests/observability/test_models_and_sinks.py", "tests/observability/test_service_integration.py"],
       "consumerEvidence": ["CustomerAiDiagnosticEventTest", "CustomerAiDiagnosticPublisherTest", "CustomerAiClientDiagnosticsTest"]
     },

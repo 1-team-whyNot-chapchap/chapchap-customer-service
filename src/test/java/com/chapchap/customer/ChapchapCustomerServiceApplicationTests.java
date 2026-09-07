@@ -12,7 +12,7 @@ import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessi
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink;
 import com.chapchap.customer.global.config.CustomerAiRuntimeActivationGate;
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
-import com.chapchap.customer.global.observability.customerai.MeteredLoggingCustomerAiDiagnosticSink;
+import com.chapchap.customer.global.observability.customerai.LoggingCustomerAiDiagnosticSink;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
 import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
@@ -93,7 +93,7 @@ class ChapchapCustomerServiceApplicationTests {
         assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticSink.class))
                 .hasSize(1)
                 .allSatisfy((name, sink) -> assertThat(sink)
-                        .isInstanceOf(MeteredLoggingCustomerAiDiagnosticSink.class));
+                        .isInstanceOf(LoggingCustomerAiDiagnosticSink.class));
         assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticPublisher.class)).hasSize(1);
     }
 

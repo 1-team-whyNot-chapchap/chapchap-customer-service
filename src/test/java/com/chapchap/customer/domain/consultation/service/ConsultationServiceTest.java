@@ -5,6 +5,7 @@ import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
 import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.event.ConsultationMessageSavedEvent;
 import com.chapchap.customer.domain.consultation.event.ConsultationAiResponseRequestedEvent;
+import com.chapchap.customer.domain.consultation.event.ConsultationClosedEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
@@ -33,6 +34,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
 
@@ -229,6 +231,65 @@ class ConsultationServiceTest {
         verify(applicationEventPublisher, times(2)).publishEvent(events.capture());
         assertThat(events.getAllValues()).anyMatch(ConsultationMessageSavedEvent.class::isInstance);
         assertThat(events.getAllValues()).anyMatch(ConsultationAiResponseRequestedEvent.class::isInstance);
+    }
+
+    @Test
+    void assignedAdminClosesInProgressConsultationAndPublishesEvent() {
+        Consultation consultation = consultation(3L, 7L);
+        ReflectionTestUtils.setField(consultation, "status", ConsultationStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(consultation, "assignedAdminId", 11L);
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
+
+        var response = consultationService.closeConsultation(
+                new GatewayUserPrincipal("11", RolePolicy.ADMIN), 3L);
+
+        assertThat(response.status()).isEqualTo(ConsultationStatus.CLOSED);
+        assertThat(response.closedAt()).isNotNull();
+        verify(auditLogWriter).recordConsultationClosed(
+                eq(11L), eq(consultation), eq("IN_PROGRESS"), any(LocalDateTime.class));
+        verify(applicationEventPublisher).publishEvent(new ConsultationClosedEvent(3L));
+    }
+
+    @Test
+    void rejectsAdminWhoIsNotAssignedToConsultation() {
+        Consultation consultation = consultation(3L, 7L);
+        ReflectionTestUtils.setField(consultation, "status", ConsultationStatus.IN_PROGRESS);
+        ReflectionTestUtils.setField(consultation, "assignedAdminId", 12L);
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
+
+        assertThatThrownBy(() -> consultationService.closeConsultation(
+                new GatewayUserPrincipal("11", RolePolicy.ADMIN), 3L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(auditLogWriter, never()).recordConsultationClosed(any(), any(), any(), any());
+        verify(applicationEventPublisher, never()).publishEvent(any(ConsultationClosedEvent.class));
+    }
+
+    @Test
+    void superAdminCanCloseWaitingConsultationForRecovery() {
+        Consultation consultation = consultation(3L, 7L);
+        ReflectionTestUtils.setField(consultation, "status", ConsultationStatus.WAITING_ADMIN);
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
+
+        var response = consultationService.closeConsultation(
+                new GatewayUserPrincipal("99", RolePolicy.SUPER_ADMIN), 3L);
+
+        assertThat(response.status()).isEqualTo(ConsultationStatus.CLOSED);
+        verify(auditLogWriter).recordConsultationClosed(
+                eq(99L), eq(consultation), eq("WAITING_ADMIN"), any(LocalDateTime.class));
+    }
+
+    @Test
+    void rejectsClosingAlreadyClosedConsultation() {
+        Consultation consultation = consultation(3L, 7L);
+        consultation.close(LocalDateTime.now());
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
+
+        assertThatThrownBy(() -> consultationService.closeConsultation(
+                new GatewayUserPrincipal("99", RolePolicy.SUPER_ADMIN), 3L))
+                .isInstanceOf(BusinessException.class);
+
+        verify(applicationEventPublisher, never()).publishEvent(any(ConsultationClosedEvent.class));
     }
 
     private Consultation consultation(Long consultationId, Long userId) {

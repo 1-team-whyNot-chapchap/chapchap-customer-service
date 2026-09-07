@@ -96,6 +96,47 @@ public class AuditLogWriter {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public void recordConsultationClosed(
+            Long actorUserId,
+            Consultation consultation,
+            String beforeStatus,
+            LocalDateTime now
+    ) {
+        auditLogRepository.save(AuditLog.consultationChange(
+                actorUserId,
+                AuditActionType.CONSULTATION_CLOSED,
+                String.valueOf(consultation.getId()),
+                MDC.get(TRACE_ID_KEY),
+                AuditActorType.ADMIN,
+                consultationDetail(beforeStatus, consultation),
+                now
+        ));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordConsultationSummaryResult(
+            Long consultationId,
+            Long summaryJobId,
+            boolean completed,
+            String failureCode,
+            LocalDateTime now
+    ) {
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("summaryJobId", summaryJobId);
+        detail.put("status", completed ? "COMPLETED" : "FAILED");
+        detail.put("failureCode", failureCode);
+        auditLogRepository.save(AuditLog.consultationChange(
+                null,
+                completed ? AuditActionType.AI_SUMMARY_GENERATED : AuditActionType.AI_SUMMARY_FAILED,
+                String.valueOf(consultationId),
+                MDC.get(TRACE_ID_KEY),
+                AuditActorType.SYSTEM,
+                detail,
+                now
+        ));
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void recordQualityInquiryProcessed(
             Long actorUserId,
             QualityInquiry before,
@@ -177,6 +218,7 @@ public class AuditLogWriter {
         after.put("assignedAdminId", consultation.getAssignedAdminId());
         after.put("escalatedAt", consultation.getEscalatedAt());
         after.put("assignedAt", consultation.getAssignedAt());
+        after.put("closedAt", consultation.getClosedAt());
         detail.put("after", after);
         return detail;
     }

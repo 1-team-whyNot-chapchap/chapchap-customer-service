@@ -12,7 +12,7 @@ public final class CustomerAiActivationManifestVerifier {
             "chroma",
             "callbackAuthentication",
             "mcpTransport",
-            "traceMetricBackend"
+            "structuredLogBackend"
     );
     private static final Set<String> MATRIX_ROWS = Set.of(
             "SERVICE_JWT",

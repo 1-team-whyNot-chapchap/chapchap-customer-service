@@ -12,6 +12,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +37,14 @@ public class AdminConsultationController {
             @PathVariable Long consultationId
     ) {
         return GlobalResponse.success(consultationService.acceptConsultation(requireUserId(principal), consultationId));
+    }
+
+    @PostMapping("/{consultationId}/closures")
+    public ResponseEntity<GlobalResponse<ConsultationResponse>> closeConsultation(
+            @AuthenticationPrincipal GatewayUserPrincipal principal,
+            @PathVariable Long consultationId
+    ) {
+        return GlobalResponse.success(consultationService.closeConsultation(principal, consultationId));
     }
 
     private Long requireUserId(GatewayUserPrincipal principal) {

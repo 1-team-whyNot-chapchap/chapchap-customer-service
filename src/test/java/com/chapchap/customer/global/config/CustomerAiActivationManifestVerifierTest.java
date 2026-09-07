@@ -34,6 +34,16 @@ class CustomerAiActivationManifestVerifierTest {
 
         assertThat(verifier.isReady(approved)).isTrue();
 
+        ObjectNode prerequisites = (ObjectNode) approved.required("runtimePrerequisites");
+        prerequisites.remove("structuredLogBackend");
+        prerequisites.put("traceMetricBackend", "PASS");
+        assertThat(verifier.isReady(approved)).isFalse();
+        prerequisites.remove("traceMetricBackend");
+        prerequisites.put("structuredLogBackend", "BLOCKED");
+        assertThat(verifier.isReady(approved)).isFalse();
+        prerequisites.put("structuredLogBackend", "PASS");
+        assertThat(verifier.isReady(approved)).isTrue();
+
         ((ObjectNode) approved.required("matrix").get(0)).put("isolatedIntegration", "BLOCKED");
         assertThat(verifier.isReady(approved)).isFalse();
     }

@@ -1,27 +1,21 @@
 package com.chapchap.customer.global.observability.customerai;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.spi.LoggingEventBuilder;
 
 import java.util.Objects;
 
-public final class MeteredLoggingCustomerAiDiagnosticSink implements CustomerAiDiagnosticSink {
-    static final String METRIC_NAME = "chapchap.customer.ai.events";
-    private static final String NONE = "none";
+public final class LoggingCustomerAiDiagnosticSink implements CustomerAiDiagnosticSink {
 
-    private final MeterRegistry meterRegistry;
     private final Logger logger;
 
-    public MeteredLoggingCustomerAiDiagnosticSink(MeterRegistry meterRegistry) {
-        this(meterRegistry, LoggerFactory.getLogger(MeteredLoggingCustomerAiDiagnosticSink.class));
+    public LoggingCustomerAiDiagnosticSink() {
+        this(LoggerFactory.getLogger(LoggingCustomerAiDiagnosticSink.class));
     }
 
-    MeteredLoggingCustomerAiDiagnosticSink(MeterRegistry meterRegistry, Logger logger) {
-        this.meterRegistry = Objects.requireNonNull(meterRegistry);
+    LoggingCustomerAiDiagnosticSink(Logger logger) {
+
         this.logger = Objects.requireNonNull(logger);
     }
 
@@ -29,7 +23,7 @@ public final class MeteredLoggingCustomerAiDiagnosticSink implements CustomerAiD
     public void emit(CustomerAiDiagnosticEvent event) {
         CustomerAiDiagnosticEvent diagnosticEvent = Objects.requireNonNull(event);
         writeStructuredLog(diagnosticEvent);
-        incrementCounter(diagnosticEvent);
+
     }
 
     private void writeStructuredLog(CustomerAiDiagnosticEvent event) {
@@ -50,22 +44,6 @@ public final class MeteredLoggingCustomerAiDiagnosticSink implements CustomerAiD
         entry.log("customer_ai_diagnostic");
     }
 
-    private void incrementCounter(CustomerAiDiagnosticEvent event) {
-        Tags tags = Tags.of(
-                "eventType", event.eventType().name(),
-                "outcome", event.outcome().name(),
-                "route", valueOrNone(nameOf(event.route())),
-                "capabilityId", valueOrNone(idOf(event)),
-                "failureCode", valueOrNone(nameOf(event.failureCode())),
-                "retryable", valueOrNone(event.retryable() == null ? null : event.retryable().toString())
-        );
-        Counter.builder(METRIC_NAME)
-                .description("Customer-AI integration diagnostic events")
-                .tags(tags)
-                .register(meterRegistry)
-                .increment();
-    }
-
     private void addIfPresent(LoggingEventBuilder entry, String key, Object value) {
         if (value != null) {
             entry.addKeyValue(key, value);
@@ -80,7 +58,4 @@ public final class MeteredLoggingCustomerAiDiagnosticSink implements CustomerAiD
         return value == null ? null : value.name();
     }
 
-    private String valueOrNone(String value) {
-        return value == null ? NONE : value;
-    }
 }
