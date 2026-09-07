@@ -10,9 +10,11 @@ This copy lets Customer-Service verify the consumer shape without importing Cust
 
 ## Bilateral activation matrix
 
-- Matrix: `customer-ai-bilateral-matrix-v1.json`
-- Verified provider baseline: Customer-AI `bb27063fb4fb4bba7063a366480e40384f6f6062`
-- Verified consumer baseline: Customer-Service `3bb04a3deec4793fe4b44176081368310ebffe9e`
+- Runtime manifest: `src/main/resources/contracts/customer-ai-bilateral-matrix-v1.json`
+- Verified provider baseline: Customer-AI `6e2d036a46be01030e55c5a0cde261916bfb28c7`
+- Verified consumer baseline: Customer-Service `a94dcfce45afe0d64c04943ca061d91d4dcb307d`
 - Candidate fixture SHA-256: `ABE26EB47D4D509785FE2E1C9BA5345D2FE279B1AA0C73D0CAB19A4E38B78862`
 
 The matrix records local provider and consumer evidence separately from isolated integration evidence. Runtime activation remains blocked until every matrix row and prerequisite is `PASS`, both runtime sides are explicitly enabled, and the contract is `CONFIRMED`.
+
+`SERVICE_JWT`와 `SUBJECT_ASSERTION`의 격리 PASS는 실제 Java 발급 자료를 임시 HTTPS JWKS로 제공하고 Customer-AI 검증기가 검증한 결과다. 운영 Auth/JWKS 배포 완료를 뜻하지 않으므로 Runtime prerequisite는 별도 PASS 증거가 생길 때까지 BLOCKED다.
