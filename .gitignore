@@ -37,6 +37,8 @@ out/
 .vscode/
 
 .env
+.env.*
+!.env.example
 
 # 로컬 작업 문서와 에이전트 운영 지침
 AGENTS.md

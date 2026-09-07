@@ -2,6 +2,8 @@ server:
   port: ${APP_PORT:8084}
 
 spring:
+  config:
+    import: optional:file:.env[.properties]
   application:
     name: chapchap-customer-service
   autoconfigure:
@@ -10,7 +12,7 @@ spring:
   servlet:
     multipart:
       max-file-size: 10MB
-      max-request-size: 10MB
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:11MB}
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3307}/${DB_NAME:customer_db}
     username: ${DB_USER:chapchap}
@@ -32,6 +34,7 @@ spring:
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     listener:
+      auto-startup: ${KAFKA_LISTENER_AUTO_STARTUP:true}
       ack-mode: record
 
 customer:
