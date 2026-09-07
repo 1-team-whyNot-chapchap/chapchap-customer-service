@@ -15,8 +15,8 @@ import java.util.regex.Pattern;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class CustomerAiBilateralContractMatrixTest {
-    private static final String PROVIDER_COMMIT = "bb27063fb4fb4bba7063a366480e40384f6f6062";
-    private static final String CONSUMER_COMMIT = "3bb04a3deec4793fe4b44176081368310ebffe9e";
+    private static final String PROVIDER_COMMIT = "6e2d036a46be01030e55c5a0cde261916bfb28c7";
+    private static final String CONSUMER_COMMIT = "3f53d25acbef498eea24aede8e4ed4cc2b5d2e5f";
     private static final String FIXTURE_SHA256 =
             "ABE26EB47D4D509785FE2E1C9BA5345D2FE279B1AA0C73D0CAB19A4E38B78862";
     private static final Pattern GIT_COMMIT = Pattern.compile("[0-9a-f]{40}");
@@ -83,13 +83,30 @@ class CustomerAiBilateralContractMatrixTest {
             actualIds.add(row.required("id").textValue());
             assertThat(row.required("provider").textValue()).isEqualTo("PASS");
             assertThat(row.required("consumer").textValue()).isEqualTo("PASS");
-            assertThat(row.required("isolatedIntegration").textValue()).isEqualTo("BLOCKED");
-            assertThat(row.required("blockers")).isNotEmpty().allSatisfy(blocker ->
-                    assertThat(blocker.textValue()).isIn(BLOCKER_CODES));
+            String isolatedIntegration = row.required("isolatedIntegration").textValue();
+            assertThat(isolatedIntegration).isIn("PASS", "BLOCKED");
+            if ("PASS".equals(isolatedIntegration)) {
+                assertThat(row.required("blockers")).isEmpty();
+            } else {
+                assertThat(row.required("blockers")).isNotEmpty().allSatisfy(blocker ->
+                        assertThat(blocker.textValue()).isIn(BLOCKER_CODES));
+            }
             assertEvidence(row.required("providerEvidence"));
             assertEvidence(row.required("consumerEvidence"));
         }
         assertThat(actualIds).containsExactlyInAnyOrderElementsOf(MATRIX_IDS);
+    }
+
+    @Test
+    void recordsOnlyActuallyExecutedAuthenticationRowsAsIsolatedPass() {
+        Set<String> isolatedPassRows = new HashSet<>();
+        for (JsonNode row : matrix.required("matrix")) {
+            if ("PASS".equals(row.required("isolatedIntegration").textValue())) {
+                isolatedPassRows.add(row.required("id").textValue());
+            }
+        }
+
+        assertThat(isolatedPassRows).containsExactlyInAnyOrder("SERVICE_JWT", "SUBJECT_ASSERTION");
     }
 
     @Test

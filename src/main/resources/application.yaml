@@ -52,6 +52,8 @@ customer:
       enabled: ${KNOWLEDGE_ACTIVATION_SCHEDULER_ENABLED:true}
       fixed-delay: ${KNOWLEDGE_ACTIVATION_SCHEDULER_FIXED_DELAY:60000}
   ai:
+    activation:
+      mode: ${CUSTOMER_AI_ACTIVATION_MODE:DISABLED}
     internal-auth:
       enabled: ${CUSTOMER_AI_INTERNAL_AUTH_ENABLED:false}
       auth-base-url: ${AUTH_SERVICE_BASE_URL:https://auth-service}

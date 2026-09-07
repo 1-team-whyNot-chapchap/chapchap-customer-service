@@ -5,11 +5,11 @@
   "verifiedPair": {
     "provider": {
       "repository": "Customer-Ai",
-      "commit": "bb27063fb4fb4bba7063a366480e40384f6f6062"
+      "commit": "6e2d036a46be01030e55c5a0cde261916bfb28c7"
     },
     "consumer": {
       "repository": "chapchap-customer-service",
-      "commit": "3bb04a3deec4793fe4b44176081368310ebffe9e"
+      "commit": "3f53d25acbef498eea24aede8e4ed4cc2b5d2e5f"
     }
   },
   "fixture": {
@@ -34,19 +34,19 @@
       "id": "SERVICE_JWT",
       "provider": "PASS",
       "consumer": "PASS",
-      "isolatedIntegration": "BLOCKED",
-      "blockers": ["AUTH_JWKS_UNAVAILABLE"],
-      "providerEvidence": ["tests/security/test_jwt_verifier.py"],
-      "consumerEvidence": ["Rs256CustomerAiSubjectAssertionIssuerTest", "CustomerAiRequestCredentialsProviderTest"]
+      "isolatedIntegration": "PASS",
+      "blockers": [],
+      "providerEvidence": ["tests/security/test_jwt_verifier.py", "tests/security/test_internal_auth_runtime.py", "tests/security/test_jwks_runtime.py"],
+      "consumerEvidence": ["Rs256CustomerAiSubjectAssertionIssuerTest", "CustomerAiRequestCredentialsProviderTest", "scripts/run-internal-auth-isolated-contract.ps1"]
     },
     {
       "id": "SUBJECT_ASSERTION",
       "provider": "PASS",
       "consumer": "PASS",
-      "isolatedIntegration": "BLOCKED",
-      "blockers": ["AUTH_JWKS_UNAVAILABLE"],
-      "providerEvidence": ["tests/security/test_jwt_verifier.py"],
-      "consumerEvidence": ["Rs256CustomerAiSubjectAssertionIssuerTest", "CurrentStateTrustedContextBoundaryTest"]
+      "isolatedIntegration": "PASS",
+      "blockers": [],
+      "providerEvidence": ["tests/security/test_jwt_verifier.py", "tests/security/test_internal_auth_runtime.py", "tests/security/test_jwks_runtime.py"],
+      "consumerEvidence": ["Rs256CustomerAiSubjectAssertionIssuerTest", "CurrentStateTrustedContextBoundaryTest", "scripts/run-internal-auth-isolated-contract.ps1"]
     },
     {
       "id": "CONSULTATION",

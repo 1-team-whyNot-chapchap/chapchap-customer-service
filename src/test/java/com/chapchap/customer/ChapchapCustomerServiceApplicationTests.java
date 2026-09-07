@@ -10,6 +10,7 @@ import com.chapchap.customer.domain.knowledge.processing.async.HttpCustomerAiKno
 import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackConsumer;
 import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackController;
 import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink;
+import com.chapchap.customer.global.config.CustomerAiRuntimeActivationGate;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
 import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
@@ -75,6 +76,7 @@ class ChapchapCustomerServiceApplicationTests {
 
     @Test
     void contextLoads() {
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiRuntimeActivationGate.class)).hasSize(1);
     }
     @Test
     void keepsCustomerAiCandidateRuntimeComponentsUnregistered() {
