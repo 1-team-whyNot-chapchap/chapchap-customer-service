@@ -52,9 +52,22 @@ customer:
       enabled: ${KNOWLEDGE_ACTIVATION_SCHEDULER_ENABLED:true}
       fixed-delay: ${KNOWLEDGE_ACTIVATION_SCHEDULER_FIXED_DELAY:60000}
   ai:
+    internal-auth:
+      enabled: ${CUSTOMER_AI_INTERNAL_AUTH_ENABLED:false}
+      auth-base-url: ${AUTH_SERVICE_BASE_URL:https://auth-service}
+      token-path: ${AUTH_SERVICE_TOKEN_PATH:/internal/v1/service-tokens}
+      client-id: ${AUTH_CUSTOMER_SERVICE_CLIENT_ID:customer-service}
+      client-secret: ${AUTH_CUSTOMER_SERVICE_CLIENT_SECRET:}
+      audience: ${AUTH_CUSTOMER_SERVICE_AUDIENCE:chapchap-customer-ai}
+      scope: ${AUTH_CUSTOMER_SERVICE_SCOPE:customer-ai.invoke}
+      subject-key-id: ${CUSTOMER_AI_SUBJECT_KEY_ID:customer-subject-1}
+      subject-private-key-pem: ${CUSTOMER_AI_SUBJECT_PRIVATE_KEY_PEM:}
+      subject-public-key-pem: ${CUSTOMER_AI_SUBJECT_PUBLIC_KEY_PEM:}
+      subject-lifetime-seconds: ${CUSTOMER_AI_SUBJECT_LIFETIME_SECONDS:60}
+      connect-timeout-milliseconds: ${AUTH_SERVICE_CONNECT_TIMEOUT_MILLISECONDS:1000}
+      read-timeout-milliseconds: ${AUTH_SERVICE_READ_TIMEOUT_MILLISECONDS:3000}
     knowledge-processing:
       base-url: ${CUSTOMER_AI_BASE_URL:http://localhost:8085}
-      service-token: ${CUSTOMER_AI_SERVICE_TOKEN:}
       connect-timeout-milliseconds: ${CUSTOMER_AI_CONNECT_TIMEOUT_MILLISECONDS:1000}
       read-timeout-milliseconds: ${CUSTOMER_AI_READ_TIMEOUT_MILLISECONDS:10000}
   kafka:

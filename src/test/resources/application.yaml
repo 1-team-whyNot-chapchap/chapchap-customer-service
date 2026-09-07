@@ -20,9 +20,10 @@ customer:
     activation-scheduler:
       enabled: false
   ai:
+    internal-auth:
+      enabled: false
     knowledge-processing:
       base-url: http://localhost:8085
-      service-token: test-customer-ai-service-token
       connect-timeout-milliseconds: 1000
       read-timeout-milliseconds: 10000
   kafka:
