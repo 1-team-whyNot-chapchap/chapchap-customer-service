@@ -4,6 +4,7 @@ import com.chapchap.customer.domain.consultation.entity.Consultation;
 import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
 import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.event.ConsultationAiResponseRequestedEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
@@ -33,6 +34,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
 class ConsultationServiceTest {
@@ -65,7 +67,9 @@ class ConsultationServiceTest {
         });
         ArgumentCaptor<ConsultationMessage> messageCaptor = ArgumentCaptor.forClass(ConsultationMessage.class);
 
-        var response = consultationService.createConsultation(7L, new ConsultationCreateRequest("  배송 문의  "));
+        var response = consultationService.createConsultation(
+                new GatewayUserPrincipal("7", RolePolicy.CUSTOMER),
+                new ConsultationCreateRequest("  배송 문의  "));
 
         verify(consultationMessageRepository).save(messageCaptor.capture());
         ConsultationMessage firstMessage = messageCaptor.getValue();
@@ -198,6 +202,33 @@ class ConsultationServiceTest {
                 3L,
                 new ConsultationRealtimeMessageRequest("상담 메시지")
         )).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void savesCustomerFollowUpDuringAiHandlingAndRequestsAiAfterCommit() {
+        Consultation consultation = consultation(3L, 7L);
+        ConsultationMessage previous = ConsultationMessage.firstUserMessage(
+                consultation, 7L, "첫 문의", LocalDateTime.now());
+        ReflectionTestUtils.setField(previous, "id", 9L);
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
+        when(consultationMessageRepository.findTopByConsultation_IdOrderBySequenceNoDesc(3L))
+                .thenReturn(Optional.of(previous));
+        when(consultationMessageRepository.save(any(ConsultationMessage.class))).thenAnswer(invocation -> {
+            ConsultationMessage message = invocation.getArgument(0);
+            ReflectionTestUtils.setField(message, "id", 10L);
+            return message;
+        });
+
+        consultationService.saveRealtimeMessage(
+                new GatewayUserPrincipal("7", RolePolicy.CUSTOMER),
+                3L,
+                new ConsultationRealtimeMessageRequest("추가 문의")
+        );
+
+        ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
+        verify(applicationEventPublisher, times(2)).publishEvent(events.capture());
+        assertThat(events.getAllValues()).anyMatch(ConsultationMessageSavedEvent.class::isInstance);
+        assertThat(events.getAllValues()).anyMatch(ConsultationAiResponseRequestedEvent.class::isInstance);
     }
 
     private Consultation consultation(Long consultationId, Long userId) {

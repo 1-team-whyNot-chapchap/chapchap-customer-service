@@ -9,5 +9,6 @@ public enum CustomerAiDiagnosticOutcome {
     FAILED,
     IGNORED_DUPLICATE,
     IGNORED_STALE,
-    ACCESS_GRANTED
+    ACCESS_GRANTED,
+    ACCESS_DENIED
 }

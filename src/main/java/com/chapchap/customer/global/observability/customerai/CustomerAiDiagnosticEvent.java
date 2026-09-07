@@ -108,6 +108,36 @@ public final class CustomerAiDiagnosticEvent {
         );
     }
 
+    public static CustomerAiDiagnosticEvent consultationLifecycleApplied(
+            UUID requestId,
+            String traceId,
+            long consultationId,
+            CustomerAiConsultationResult.Route route,
+            CustomerAiDiagnosticOutcome outcome
+    ) {
+        if (!CONSULTATION_OUTCOMES.contains(outcome)) {
+            throw new IllegalArgumentException("Consultation lifecycle outcome is invalid.");
+        }
+        return new CustomerAiDiagnosticEvent(
+                CustomerAiDiagnosticEventType.CONSULTATION_LIFECYCLE_APPLIED,
+                requestId, traceId, consultationId, null, null, Objects.requireNonNull(route), null,
+                outcome, null, null, null, null
+        );
+    }
+
+    public static CustomerAiDiagnosticEvent consultationLifecycleFallback(
+            UUID requestId,
+            String traceId,
+            long consultationId,
+            CustomerAiDiagnosticFailureCode failureCode
+    ) {
+        return new CustomerAiDiagnosticEvent(
+                CustomerAiDiagnosticEventType.CONSULTATION_LIFECYCLE_FALLBACK,
+                requestId, traceId, consultationId, null, null, null, null,
+                CustomerAiDiagnosticOutcome.HANDOFF, Objects.requireNonNull(failureCode), null, null, null
+        );
+    }
+
     public static CustomerAiDiagnosticEvent knowledgeSubmitted(
             UUID requestId,
             String traceId,
@@ -278,6 +308,20 @@ public final class CustomerAiDiagnosticEvent {
                 CustomerAiDiagnosticEventType.CURRENT_STATE_ACCESS_GRANTED,
                 requestId, traceId, consultationId, null, null, null, Objects.requireNonNull(capabilityId),
                 CustomerAiDiagnosticOutcome.ACCESS_GRANTED, null, null, null, null
+        );
+    }
+
+    public static CustomerAiDiagnosticEvent currentStateAccessDenied(
+            UUID requestId,
+            String traceId,
+            long consultationId,
+            CurrentStateCapability capabilityId,
+            CustomerAiDiagnosticFailureCode failureCode
+    ) {
+        return new CustomerAiDiagnosticEvent(
+                CustomerAiDiagnosticEventType.CURRENT_STATE_ACCESS_DENIED,
+                requestId, traceId, consultationId, null, null, null, Objects.requireNonNull(capabilityId),
+                CustomerAiDiagnosticOutcome.ACCESS_DENIED, Objects.requireNonNull(failureCode), false, null, null
         );
     }
 
