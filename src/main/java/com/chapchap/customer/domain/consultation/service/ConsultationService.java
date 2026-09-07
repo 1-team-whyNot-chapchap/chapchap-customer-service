@@ -5,6 +5,7 @@ import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
 import com.chapchap.customer.domain.consultation.entity.ConsultationSenderType;
 import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.event.ConsultationClosedEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.response.AdminConsultationResponse;
 import com.chapchap.customer.domain.audit.service.AuditLogWriter;
@@ -25,12 +26,15 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class ConsultationService {
+    private static final Clock KST_CLOCK = Clock.system(ZoneId.of("Asia/Seoul"));
     private final ConsultationRepository consultationRepository;
     private final ConsultationMessageRepository consultationMessageRepository;
     private final AuditLogWriter auditLogWriter;
@@ -91,6 +95,23 @@ public class ConsultationService {
         Consultation consultation = consultationRepository.findById(consultationId)
                 .orElseThrow(ConsultationNotFoundException::new);
         auditLogWriter.recordConsultationAccepted(adminId, consultation, ConsultationStatus.WAITING_ADMIN.name(), now);
+        return ConsultationResponse.from(consultation);
+    }
+
+    @Transactional
+    public ConsultationResponse closeConsultation(
+            GatewayUserPrincipal principal,
+            Long consultationId
+    ) {
+        Long actorUserId = requireUserId(principal);
+        Consultation consultation = consultationRepository.findByIdForMessageWrite(consultationId)
+                .orElseThrow(ConsultationNotFoundException::new);
+        assertCanClose(principal, consultation, actorUserId);
+        String beforeStatus = consultation.getStatus().name();
+        LocalDateTime now = LocalDateTime.now(KST_CLOCK);
+        consultation.close(now);
+        auditLogWriter.recordConsultationClosed(actorUserId, consultation, beforeStatus, now);
+        applicationEventPublisher.publishEvent(new ConsultationClosedEvent(consultationId));
         return ConsultationResponse.from(consultation);
     }
 
@@ -165,6 +186,22 @@ public class ConsultationService {
             return Long.parseLong(principal.userId());
         } catch (NumberFormatException exception) {
             throw new AccessDeniedException("유효하지 않은 사용자 ID입니다.");
+        }
+    }
+
+    private void assertCanClose(
+            GatewayUserPrincipal principal,
+            Consultation consultation,
+            Long actorUserId
+    ) {
+        if (principal.role() == RolePolicy.SUPER_ADMIN) {
+            return;
+        }
+        if (principal.role() != RolePolicy.ADMIN
+                || consultation.getStatus() != ConsultationStatus.IN_PROGRESS
+                || consultation.getAssignedAdminId() == null
+                || !consultation.getAssignedAdminId().equals(actorUserId)) {
+            throw new AccessDeniedException("배정된 관리자만 상담을 종료할 수 있습니다.");
         }
     }
 }

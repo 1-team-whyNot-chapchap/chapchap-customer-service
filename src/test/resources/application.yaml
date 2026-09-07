@@ -29,6 +29,8 @@ customer:
       base-url: http://localhost:8085
       connect-timeout-milliseconds: 1000
       read-timeout-milliseconds: 10000
+    consultation-summary:
+      async-enabled: false
   kafka:
     topics:
       payment: subscription.payment-events.v1
