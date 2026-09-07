@@ -32,7 +32,7 @@ public class ConsultationController {
             @AuthenticationPrincipal GatewayUserPrincipal principal,
             @Valid @RequestBody ConsultationCreateRequest request
     ) {
-        return GlobalResponse.success(consultationService.createConsultation(requireUserId(principal), request));
+        return GlobalResponse.success(consultationService.createConsultation(principal, request));
     }
 
     @PostMapping("/{consultationId}/admin-handoffs")
