@@ -13,6 +13,15 @@ import java.util.List;
 import java.util.Optional;
 
 public interface KnowledgeVersionRepository extends JpaRepository<KnowledgeVersion, Long> {
+    @Query("""
+            select v.id from KnowledgeVersion v
+            where v.active = true and v.processingStatus = :processingStatus
+              and v.effectiveFrom <= :now order by v.id
+            """)
+    List<Long> findApprovedVersionIds(
+            @Param("processingStatus") KnowledgeProcessingStatus processingStatus,
+            @Param("now") LocalDateTime now);
+
     boolean existsByKnowledgeDocumentIdAndVersion(Long knowledgeDocumentId, String version);
 
     Optional<KnowledgeVersion> findByKnowledgeDocumentIdAndActiveTrue(Long knowledgeDocumentId);

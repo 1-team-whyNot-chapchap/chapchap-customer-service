@@ -77,12 +77,15 @@ class ConsultationAiLifecycleStateServiceTest {
         when(messageRepository.findById(9002L)).thenReturn(Optional.of(trigger));
         when(messageRepository.findByConsultation_IdOrderBySequenceNoAsc(501L))
                 .thenReturn(List.of(previous, trigger));
+        when(knowledgeVersionRepository.findApprovedVersionIds(any(), any())).thenReturn(List.of(101L, 102L));
 
         CustomerAiConsultationCommand command = service.prepare(event(), REQUEST_ID)
                 .orElseThrow()
                 .command();
 
         assertThat(command.triggerMessageId()).isEqualTo(9002L);
+        assertThat(command.knowledgeVersionIds()).containsExactly(101L, 102L);
+        assertThat(CustomerAiConsultationRequest.from(command).knowledgeVersionIds()).containsExactly(101L, 102L);
         assertThat(command.message()).isEqualTo("환불 정책");
         assertThat(command.conversationContext()).containsExactly("이전 답변");
         assertThat(command.subject().allowedAiScopes()).containsExactly("customer-ai.policy.read");
@@ -221,7 +224,8 @@ class ConsultationAiLifecycleStateServiceTest {
                         requestId,
                         501L),
                 "환불 정책",
-                List.of()
+                List.of(),
+                List.of(101L)
         );
     }
 
@@ -252,6 +256,51 @@ class ConsultationAiLifecycleStateServiceTest {
         ReflectionTestUtils.setField(version, "id", id);
         version.startProcessing(NOW.minusHours(1));
         version.completeProcessing(NOW.minusMinutes(30));
+        version.activate(NOW.minusMinutes(20));
         return version;
+    }
+
+    @Test
+    void rejectsEvidenceOutsideRequestSnapshotBeforeSavingMessage() {
+        when(consultationRepository.findByIdForMessageWrite(501L)).thenReturn(Optional.of(consultation()));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.apply(command(), evidenceResult(102L), NOW))
+                .isInstanceOf(com.chapchap.customer.global.error.custom.consultation.ConsultationStateException.class);
+        verify(messageRepository, never()).save(any());
+        verify(sourceRepository, never()).saveAll(any());
+    }
+
+    @Test
+    void rejectsVersionDeactivatedWhileAiWasResponding() {
+        KnowledgeVersion version = readyVersion(101L);
+        version.deactivate(NOW);
+        when(consultationRepository.findByIdForMessageWrite(501L)).thenReturn(Optional.of(consultation()));
+        when(knowledgeVersionRepository.findAllById(List.of(101L))).thenReturn(List.of(version));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> service.apply(command(), evidenceResult(101L), NOW))
+                .isInstanceOf(com.chapchap.customer.global.error.custom.consultation.ConsultationStateException.class);
+        verify(messageRepository, never()).save(any());
+    }
+
+    private CustomerAiConsultationResult evidenceResult(long versionId) {
+        return new CustomerAiConsultationResult(REQUEST_ID, CustomerAiConsultationResult.Decision.ANSWER,
+                "정책 답변", CustomerAiConsultationResult.Route.POLICY, false, false,
+                List.of(new CustomerAiConsultationResult.Evidence(versionId, "chunk-1", 1, 0.91)));
+    }
+
+    @Test
+    void rejectsInvalidKnowledgeSnapshotsAndDefensivelyCopiesApprovedIds() {
+        CustomerAiConsultationCommand original = command();
+        for (List<Long> invalid : List.of(List.of(0L), List.of(-1L), List.of(101L, 101L),
+                java.util.stream.LongStream.rangeClosed(1, 1001).boxed().toList())) {
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> new CustomerAiConsultationCommand(
+                    original.requestId(), original.consultationId(), original.triggerMessageId(),
+                    original.subject(), original.message(), original.conversationContext(), invalid))
+                    .isInstanceOf(IllegalArgumentException.class);
+        }
+        java.util.ArrayList<Long> ids = new java.util.ArrayList<>(List.of(101L));
+        CustomerAiConsultationCommand snapshot = new CustomerAiConsultationCommand(
+                original.requestId(), original.consultationId(), original.triggerMessageId(),
+                original.subject(), original.message(), original.conversationContext(), ids);
+        ids.add(102L);
+        assertThat(snapshot.knowledgeVersionIds()).containsExactly(101L);
     }
 }

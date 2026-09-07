@@ -13,10 +13,16 @@ public record CustomerAiConsultationCommand(
         long triggerMessageId,
         CustomerAiSubjectAssertionRequest subject,
         String message,
-        List<String> conversationContext
+        List<String> conversationContext,
+        List<Long> knowledgeVersionIds
 ) {
     private static final int MAX_MESSAGE_LENGTH = 10_000;
     private static final int MAX_CONTEXT_MESSAGES = 20;
+
+    public CustomerAiConsultationCommand(UUID requestId, long consultationId, long triggerMessageId,
+            CustomerAiSubjectAssertionRequest subject, String message, List<String> conversationContext) {
+        this(requestId, consultationId, triggerMessageId, subject, message, conversationContext, List.of());
+    }
 
     public CustomerAiConsultationCommand {
         Objects.requireNonNull(requestId, "requestId must not be null.");
@@ -43,5 +49,12 @@ public record CustomerAiConsultationCommand(
             throw new IllegalArgumentException("conversationContext contains an invalid message.");
         }
         conversationContext = List.copyOf(conversationContext);
+        Objects.requireNonNull(knowledgeVersionIds, "knowledgeVersionIds must not be null.");
+        if (knowledgeVersionIds.size() > 1000
+                || knowledgeVersionIds.stream().anyMatch(id -> id == null || id <= 0)
+                || knowledgeVersionIds.stream().distinct().count() != knowledgeVersionIds.size()) {
+            throw new IllegalArgumentException("knowledgeVersionIds must contain at most 1000 unique positive int64 IDs.");
+        }
+        knowledgeVersionIds = List.copyOf(knowledgeVersionIds);
     }
 }
