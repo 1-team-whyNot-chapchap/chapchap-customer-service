@@ -49,4 +49,16 @@ class ConsultationWebSocketSecurityInterceptorTest {
         accessor.setSessionAttributes(sessionAttributes);
         return MessageBuilder.createMessage(new byte[0], accessor.getMessageHeaders());
     }
+
+    @Test
+    void rejectsWildcardSubscriptionsAndBrokerWrites() {
+        for (String destination : new String[]{"/topic/consultations/*", "/topic/consultations/3/extra", "/topic/other"}) {
+            Message<?> message = stompMessage(StompCommand.SUBSCRIBE, destination, Map.of());
+            assertThatThrownBy(() -> interceptor.preSend(message, mock(org.springframework.messaging.MessageChannel.class)))
+                    .isInstanceOf(AccessDeniedException.class);
+        }
+        Message<?> message = stompMessage(StompCommand.SEND, "/topic/consultations/3", Map.of());
+        assertThatThrownBy(() -> interceptor.preSend(message, mock(org.springframework.messaging.MessageChannel.class)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
 }

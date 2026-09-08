@@ -40,7 +40,7 @@ public class ConsultationWebSocketSecurityInterceptor implements ChannelIntercep
         }
         Matcher matcher = destinationPattern.matcher(destination);
         if (!matcher.matches()) {
-            return message;
+            throw new AccessDeniedException("Unrecognized consultation destination");
         }
 
         consultationService.assertWebSocketParticipant(

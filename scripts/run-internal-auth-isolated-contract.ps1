@@ -10,7 +10,7 @@ if ([string]::IsNullOrWhiteSpace($AuthRepository)) {
     $AuthRepository = Join-Path $workspaceRoot "chapchap-auth-service"
 }
 if ([string]::IsNullOrWhiteSpace($CustomerAiRepository)) {
-    $CustomerAiRepository = Join-Path $workspaceRoot "chapchap-customer-ai"
+    $CustomerAiRepository = Join-Path $workspaceRoot "Customer-Ai"
 }
 
 $authRoot = (Resolve-Path -LiteralPath $AuthRepository).Path
