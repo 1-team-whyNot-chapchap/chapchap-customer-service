@@ -27,6 +27,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class ConsultationController {
     private final ConsultationService consultationService;
 
+    @GetMapping
+    public ResponseEntity<GlobalResponse<java.util.List<ConsultationResponse>>> findMyConsultations(
+            @AuthenticationPrincipal GatewayUserPrincipal principal) {
+        return GlobalResponse.success(consultationService.findMyConsultations(requireUserId(principal)));
+    }
+
     @PostMapping
     public ResponseEntity<GlobalResponse<ConsultationCreatedResponse>> createConsultation(
             @AuthenticationPrincipal GatewayUserPrincipal principal,

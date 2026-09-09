@@ -21,6 +21,11 @@ public class FaqService {
     private final AuditLogWriter auditLogWriter;
 
     @Transactional(readOnly = true)
+    public List<FaqResponse> findAdminFaqs() {
+        return faqRepository.findByActiveTrueOrderByDisplayOrderAscIdAsc().stream().map(FaqResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<FaqResponse> findPublicFaqs(String category, String keyword) {
         return faqRepository.findPublishedAndActive(normalize(category), normalize(keyword))
                 .stream()

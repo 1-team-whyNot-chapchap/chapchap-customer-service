@@ -43,6 +43,12 @@ public class FaqController {
         return GlobalResponse.success(faqService.findPublicFaq(faqId));
     }
 
+    @GetMapping("/admin/faqs")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<GlobalResponse<List<FaqResponse>>> findAdminFaqs() {
+        return GlobalResponse.success(faqService.findAdminFaqs());
+    }
+
     @PostMapping("/admin/faqs")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public ResponseEntity<GlobalResponse<FaqResponse>> createFaq(

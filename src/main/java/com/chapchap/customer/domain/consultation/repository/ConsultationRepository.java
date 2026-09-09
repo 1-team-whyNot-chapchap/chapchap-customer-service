@@ -13,6 +13,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ConsultationRepository extends JpaRepository<Consultation, Long> {
+    List<Consultation> findByUserIdOrderByUpdatedAtDesc(Long userId);
+    List<Consultation> findByAssignedAdminIdOrderByUpdatedAtDesc(Long assignedAdminId);
+
     Optional<Consultation> findByIdAndUserId(Long id, Long userId);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
