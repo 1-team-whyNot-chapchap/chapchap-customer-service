@@ -38,6 +38,8 @@ spring:
       ack-mode: record
 
 customer:
+  auth:
+    base-url: ${AUTH_SERVICE_URI:http://localhost:8081}
   storage:
     knowledge:
       endpoint: ${MINIO_ENDPOINT:http://localhost:9000}

@@ -29,6 +29,7 @@ public class SecurityConfiguration {
             HttpSecurity httpSecurity,
             TraceIdFilter traceIdFilter,
             GatewayUserContextFilter gatewayUserContextFilter,
+            CurrentAccountFilter currentAccountFilter,
             ObjectMapper objectMapper
     ) throws Exception {
         return httpSecurity
@@ -38,6 +39,7 @@ public class SecurityConfiguration {
                 .csrf(AbstractHttpConfigurer::disable)
                 .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(gatewayUserContextFilter, TraceIdFilter.class)
+                .addFilterAfter(currentAccountFilter, GatewayUserContextFilter.class)
                 .authorizeHttpRequests(request -> request
                         .requestMatchers(
                                 "/api-docs/**",
