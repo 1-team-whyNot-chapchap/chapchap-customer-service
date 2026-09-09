@@ -67,7 +67,20 @@ class ChapchapCustomerServiceApplicationTests {
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private com.chapchap.customer.global.security.context.CurrentAccountVerifier currentAccountVerifier;
+
     private MockMvc mockMvc;
+
+    @Test
+    void rejectsChangedAccountBeforeControllerAccess() throws Exception {
+        org.mockito.Mockito.doThrow(new org.springframework.security.authentication.BadCredentialsException("changed"))
+                .when(currentAccountVerifier).verify(org.mockito.ArgumentMatchers.any());
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1").header(USER_ROLE_HEADER, "ADMIN"))
+                .andExpect(status().isUnauthorized());
+    }
+
 
     @BeforeEach
     void setUpMockMvc() {
