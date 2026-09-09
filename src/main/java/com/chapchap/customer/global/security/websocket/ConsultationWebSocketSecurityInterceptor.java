@@ -22,6 +22,7 @@ public class ConsultationWebSocketSecurityInterceptor implements ChannelIntercep
     private static final Pattern SEND_DESTINATION = Pattern.compile("^/app/consultations/(\\d+)/messages$");
 
     private final ConsultationService consultationService;
+    private final com.chapchap.customer.global.security.context.CurrentAccountVerifier verifier;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -43,6 +44,11 @@ public class ConsultationWebSocketSecurityInterceptor implements ChannelIntercep
             throw new AccessDeniedException("Unrecognized consultation destination");
         }
 
+        Object expiry = accessor.getSessionAttributes() == null ? null
+                : accessor.getSessionAttributes().get(TrustedUserContextHandshakeInterceptor.EXPIRY_ATTRIBUTE);
+        if (!(expiry instanceof Long expiresAt) || expiresAt <= java.time.Instant.now().getEpochSecond())
+            throw new AccessDeniedException("상담 인증이 만료되었습니다.");
+        verifier.verify(requirePrincipal(accessor));
         consultationService.assertWebSocketParticipant(
                 Long.parseLong(matcher.group(1)),
                 requirePrincipal(accessor)

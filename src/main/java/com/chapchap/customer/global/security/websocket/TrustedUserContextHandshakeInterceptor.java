@@ -13,6 +13,7 @@ import java.util.Map;
 
 @Component
 public class TrustedUserContextHandshakeInterceptor implements HandshakeInterceptor {
+    public static final String EXPIRY_ATTRIBUTE = "accessTokenExpiresAt";
     public static final String PRINCIPAL_ATTRIBUTE = "gatewayUserPrincipal";
 
     @Override
@@ -26,6 +27,11 @@ public class TrustedUserContextHandshakeInterceptor implements HandshakeIntercep
         if (authentication == null || !(authentication.getPrincipal() instanceof GatewayUserPrincipal principal)) {
             return false;
         }
+        final long expiresAt;
+        try { expiresAt = Long.parseLong(request.getHeaders().getFirst("X-User-Expires-At")); }
+        catch (NumberFormatException exception) { return false; }
+        if (expiresAt <= java.time.Instant.now().getEpochSecond()) return false;
+        attributes.put(EXPIRY_ATTRIBUTE, expiresAt);
         attributes.put(PRINCIPAL_ATTRIBUTE, principal);
         return true;
     }
