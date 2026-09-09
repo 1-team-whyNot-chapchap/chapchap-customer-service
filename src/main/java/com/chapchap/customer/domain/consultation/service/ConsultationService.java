@@ -63,6 +63,33 @@ public class ConsultationService {
     }
 
     @Transactional(readOnly = true)
+    public List<ConsultationResponse> findMyConsultations(Long userId) {
+        return consultationRepository.findByUserIdOrderByUpdatedAtDesc(userId).stream()
+                .map(ConsultationResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ConsultationResponse> findAssignedConsultations(GatewayUserPrincipal principal) {
+        return consultationRepository.findByAssignedAdminIdOrderByUpdatedAtDesc(requireUserId(principal))
+                .stream().map(ConsultationResponse::from).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public ConsultationResponse findAssignedConsultation(GatewayUserPrincipal principal, Long consultationId) {
+        assertWebSocketParticipant(consultationId, principal);
+        return ConsultationResponse.from(consultationRepository.findById(consultationId)
+                .orElseThrow(ConsultationNotFoundException::new));
+    }
+
+    @Transactional(readOnly = true)
+    public ConsultationMessagesResponse findAssignedMessages(GatewayUserPrincipal principal, Long consultationId) {
+        assertWebSocketParticipant(consultationId, principal);
+        return new ConsultationMessagesResponse(consultationId, consultationMessageRepository
+                .findByConsultation_IdOrderBySequenceNoAsc(consultationId).stream()
+                .map(ConsultationMessageResponse::from).toList());
+    }
+
+    @Transactional(readOnly = true)
     public ConsultationResponse findMyConsultation(Long userId, Long consultationId) {
         return ConsultationResponse.from(findMyConsultationEntity(userId, consultationId));
     }

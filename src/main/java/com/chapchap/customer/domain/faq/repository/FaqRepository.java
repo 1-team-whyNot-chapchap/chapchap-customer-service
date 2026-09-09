@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface FaqRepository extends JpaRepository<Faq, Long> {
+    List<Faq> findByActiveTrueOrderByDisplayOrderAscIdAsc();
+
     @Query("""
             select faq
             from Faq faq

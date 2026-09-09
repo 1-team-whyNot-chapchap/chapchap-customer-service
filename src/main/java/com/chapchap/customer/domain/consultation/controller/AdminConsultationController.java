@@ -31,6 +31,24 @@ public class AdminConsultationController {
         return GlobalResponse.success(consultationService.findWaitingConsultations());
     }
 
+    @GetMapping("/assigned")
+    public ResponseEntity<GlobalResponse<List<ConsultationResponse>>> findAssigned(
+            @AuthenticationPrincipal GatewayUserPrincipal principal) {
+        return GlobalResponse.success(consultationService.findAssignedConsultations(principal));
+    }
+
+    @GetMapping("/{consultationId}")
+    public ResponseEntity<GlobalResponse<ConsultationResponse>> findAssignedDetail(
+            @AuthenticationPrincipal GatewayUserPrincipal principal, @PathVariable Long consultationId) {
+        return GlobalResponse.success(consultationService.findAssignedConsultation(principal, consultationId));
+    }
+
+    @GetMapping("/{consultationId}/messages")
+    public ResponseEntity<GlobalResponse<com.chapchap.customer.domain.consultation.response.ConsultationMessagesResponse>> findAssignedMessages(
+            @AuthenticationPrincipal GatewayUserPrincipal principal, @PathVariable Long consultationId) {
+        return GlobalResponse.success(consultationService.findAssignedMessages(principal, consultationId));
+    }
+
     @PatchMapping("/{consultationId}/assignee")
     public ResponseEntity<GlobalResponse<ConsultationResponse>> acceptConsultation(
             @AuthenticationPrincipal GatewayUserPrincipal principal,

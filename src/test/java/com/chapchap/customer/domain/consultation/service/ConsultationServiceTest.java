@@ -194,6 +194,27 @@ class ConsultationServiceTest {
     }
 
     @Test
+    void onlyAssignedAdministratorCanReadConversationHistory() {
+        Consultation consultation = consultation(3L, 7L);
+        ReflectionTestUtils.setField(consultation, "assignedAdminId", 11L);
+        when(consultationRepository.findById(3L)).thenReturn(Optional.of(consultation));
+        assertThatThrownBy(() -> consultationService.findAssignedMessages(
+                new GatewayUserPrincipal("12", RolePolicy.ADMIN), 3L)).isInstanceOf(AccessDeniedException.class);
+        verify(consultationMessageRepository, never()).findByConsultation_IdOrderBySequenceNoAsc(any());
+        when(consultationMessageRepository.findByConsultation_IdOrderBySequenceNoAsc(3L)).thenReturn(List.of());
+        assertThat(consultationService.findAssignedMessages(new GatewayUserPrincipal("11", RolePolicy.ADMIN), 3L).messages()).isEmpty();
+    }
+
+    @Test
+    void promotedRiderRetainsOwnConversationAccessButCannotReadOthers() {
+        Consultation consultation = consultation(3L, 7L);
+        when(consultationRepository.findById(3L)).thenReturn(Optional.of(consultation));
+        consultationService.assertWebSocketParticipant(3L, new GatewayUserPrincipal("7", RolePolicy.RIDER));
+        assertThatThrownBy(() -> consultationService.assertWebSocketParticipant(3L,
+                new GatewayUserPrincipal("8", RolePolicy.RIDER))).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     void rejectsRealtimeMessageFromNonParticipant() {
         Consultation consultation = consultation(3L, 7L);
         ReflectionTestUtils.setField(consultation, "status", ConsultationStatus.IN_PROGRESS);
