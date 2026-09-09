@@ -18,6 +18,7 @@ public class ConsultationWebSocketConfiguration implements WebSocketMessageBroke
     private String[] allowedOrigins;
     private final TrustedUserContextHandshakeInterceptor trustedUserContextHandshakeInterceptor;
     private final ConsultationWebSocketSecurityInterceptor consultationWebSocketSecurityInterceptor;
+    private final com.chapchap.customer.global.security.websocket.ConsultationConnectionRegistry connections;
 
     @Override
     public void configureMessageBroker(org.springframework.messaging.simp.config.MessageBrokerRegistry registry) {
@@ -30,6 +31,26 @@ public class ConsultationWebSocketConfiguration implements WebSocketMessageBroke
         registry.addEndpoint("/ws/customer/consultations")
                 .setAllowedOrigins(allowedOrigins)
                 .addInterceptors(trustedUserContextHandshakeInterceptor);
+    }
+
+    @Override
+    public void configureWebSocketTransport(org.springframework.web.socket.config.annotation.WebSocketTransportRegistration registry) {
+        registry.addDecoratorFactory(handler -> new org.springframework.web.socket.handler.WebSocketHandlerDecorator(handler) {
+            @Override public void afterConnectionEstablished(org.springframework.web.socket.WebSocketSession session) throws Exception {
+                connections.add(session);
+                super.afterConnectionEstablished(session);
+            }
+            @Override public void afterConnectionClosed(org.springframework.web.socket.WebSocketSession session,
+                    org.springframework.web.socket.CloseStatus status) throws Exception {
+                connections.remove(session.getId());
+                super.afterConnectionClosed(session, status);
+            }
+        });
+    }
+
+    @Override
+    public void configureClientOutboundChannel(ChannelRegistration registration) {
+        registration.interceptors(connections);
     }
 
     @Override

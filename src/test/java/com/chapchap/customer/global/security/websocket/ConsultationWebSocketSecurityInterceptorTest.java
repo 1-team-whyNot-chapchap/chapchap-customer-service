@@ -19,7 +19,7 @@ import static org.mockito.Mockito.verify;
 class ConsultationWebSocketSecurityInterceptorTest {
     private final ConsultationService consultationService = mock(ConsultationService.class);
     private final ConsultationWebSocketSecurityInterceptor interceptor =
-            new ConsultationWebSocketSecurityInterceptor(consultationService);
+            new ConsultationWebSocketSecurityInterceptor(consultationService, mock(com.chapchap.customer.global.security.context.CurrentAccountVerifier.class));
 
     @Test
     void validatesConsultationParticipantBeforeSubscription() {
@@ -27,7 +27,8 @@ class ConsultationWebSocketSecurityInterceptorTest {
         Message<?> message = stompMessage(
                 StompCommand.SUBSCRIBE,
                 "/topic/consultations/3",
-                Map.of(TrustedUserContextHandshakeInterceptor.PRINCIPAL_ATTRIBUTE, principal)
+                Map.of(TrustedUserContextHandshakeInterceptor.PRINCIPAL_ATTRIBUTE, principal,
+                        TrustedUserContextHandshakeInterceptor.EXPIRY_ATTRIBUTE, java.time.Instant.now().plusSeconds(60).getEpochSecond())
         );
 
         interceptor.preSend(message, mock(org.springframework.messaging.MessageChannel.class));

@@ -41,6 +41,9 @@ public class SecurityConfiguration {
                 .addFilterAfter(gatewayUserContextFilter, TraceIdFilter.class)
                 .addFilterAfter(currentAccountFilter, GatewayUserContextFilter.class)
                 .authorizeHttpRequests(request -> request
+                        // 최초 REQUEST에서 인증한 SSE의 완료 dispatch는 컨트롤러를 다시 호출하지 않는다.
+                        .requestMatchers(dispatch -> dispatch.getDispatcherType() == jakarta.servlet.DispatcherType.ASYNC
+                                && "/api/customer/notifications/stream".equals(dispatch.getRequestURI())).permitAll()
                         .requestMatchers(
                                 "/api-docs/**",
                                 "/swagger-ui/**",

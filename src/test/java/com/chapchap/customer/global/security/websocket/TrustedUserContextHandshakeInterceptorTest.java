@@ -31,8 +31,12 @@ class TrustedUserContextHandshakeInterceptorTest {
         );
         Map<String, Object> attributes = new java.util.HashMap<>();
 
+        ServerHttpRequest request = mock(ServerHttpRequest.class);
+        var headers = new org.springframework.http.HttpHeaders();
+        headers.set("X-User-Expires-At", Long.toString(java.time.Instant.now().plusSeconds(60).getEpochSecond()));
+        org.mockito.Mockito.when(request.getHeaders()).thenReturn(headers);
         boolean accepted = interceptor.beforeHandshake(
-                mock(ServerHttpRequest.class),
+                request,
                 mock(ServerHttpResponse.class),
                 mock(WebSocketHandler.class),
                 attributes
