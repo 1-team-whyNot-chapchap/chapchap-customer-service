@@ -34,11 +34,16 @@ public record CustomerAiKnowledgeJobCommand(
         return knowledgeVersionId + ":" + chunkProfile;
     }
 
-    public record Source(URI downloadUrl, String contentType, long fileSize) {
+    public record Source(URI downloadUrl, String contentType, long fileSize,
+                         java.util.List<String> httpAllowedOrigins) {
+        public Source(URI downloadUrl, String contentType, long fileSize) {
+            this(downloadUrl, contentType, fileSize, java.util.List.of());
+        }
         public Source {
+            httpAllowedOrigins = java.util.List.copyOf(httpAllowedOrigins);
             Objects.requireNonNull(downloadUrl, "downloadUrl must not be null.");
             if (!downloadUrl.isAbsolute()
-                    || !"https".equalsIgnoreCase(downloadUrl.getScheme())
+                    || !com.chapchap.customer.global.config.customerai.CustomerAiTransportPolicy.allows(downloadUrl, httpAllowedOrigins)
                     || downloadUrl.getHost() == null
                     || downloadUrl.getUserInfo() != null
                     || downloadUrl.getFragment() != null) {

@@ -54,6 +54,7 @@ public final class CustomerAiRuntimeActivationGate implements InitializingBean {
         switch (mode) {
             case DISABLED -> requireDisabled(anyRuntimeEnabled);
             case ISOLATED -> requireIsolated(anyRuntimeEnabled);
+            case ACADEMY -> requireAcademy();
             case ACTIVE -> requireActive();
         }
     }
@@ -80,6 +81,13 @@ public final class CustomerAiRuntimeActivationGate implements InitializingBean {
         boolean isolatedProfile = Arrays.asList(environment.getActiveProfiles()).contains(ISOLATED_PROFILE);
         if (!isolatedProfile || !anyRuntimeEnabled) {
             throw new IllegalStateException("격리 모드는 전용 Profile과 검증 대상 Runtime이 필요합니다.");
+        }
+    }
+
+    private void requireAcademy() {
+        if (!RUNTIME_FLAGS.stream().allMatch(this::isEnabled)
+                || !environment.getProperty("customer.ai.observability.enabled", Boolean.class, true)) {
+            throw new IllegalStateException("Academy AI requires all authenticated runtime components.");
         }
     }
 

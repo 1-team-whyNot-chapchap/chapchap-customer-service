@@ -57,6 +57,9 @@ customer:
       enabled: ${KNOWLEDGE_ACTIVATION_SCHEDULER_ENABLED:true}
       fixed-delay: ${KNOWLEDGE_ACTIVATION_SCHEDULER_FIXED_DELAY:60000}
   ai:
+    transport:
+      http-allowed-origins: ${CUSTOMER_AI_HTTP_ALLOWED_ORIGINS:}
+      source-http-allowed-origins: ${CUSTOMER_AI_SOURCE_HTTP_ALLOWED_ORIGINS:}
     activation:
       mode: ${CUSTOMER_AI_ACTIVATION_MODE:DISABLED}
     observability:

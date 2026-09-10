@@ -11,7 +11,7 @@ import org.springframework.web.client.RestClient;
 public class CustomerAiKnowledgeProcessingConfiguration {
     @Bean
     RestClient customerAiKnowledgeProcessingRestClient(CustomerAiKnowledgeProcessingProperties properties) {
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory requestFactory = new NoRedirectClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getConnectTimeoutMilliseconds());
         requestFactory.setReadTimeout(properties.getReadTimeoutMilliseconds());
 

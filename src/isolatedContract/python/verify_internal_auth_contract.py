@@ -117,6 +117,7 @@ def main() -> None:
     try:
         origin = f"https://localhost:{server.server_port}"
         settings = Settings(
+            _env_file=None,
             service_jwks_url=origin + service_path,
             subject_assertion_jwks_url=origin + subject_path,
             jwks_cache_lifespan_seconds=60,
@@ -194,6 +195,7 @@ def main() -> None:
             raise AssertionError("제거된 이전 JWKS 키로 발급한 토큰이 거부되지 않았습니다.")
 
         unavailable_settings = Settings(
+            _env_file=None,
             service_jwks_url=origin + "/missing-service-jwks",
             subject_assertion_jwks_url=origin + subject_path,
         )
