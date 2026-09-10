@@ -48,3 +48,18 @@ PROJECT_AGENT_RULES.md
 SETUP_NOTES.md
 docs/
 reports/
+
+# Local documentation (already tracked files are unaffected)
+*.md
+*.markdown
+*.pdf
+*.doc
+*.docx
+*.hwp
+*.hwpx
+*.ppt
+*.pptx
+/PROJECT_HARNESS/
+/ai-context/
+/artifacts/chapchap-customer-service-*docs*.zip
+/artifacts/chapchap-customer-service-all-documents-*.zip
