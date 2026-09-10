@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.audit.service;
 
-import com.chapchap.customer.domain.audit.entity.AuditActionType;
-import com.chapchap.customer.domain.audit.entity.AuditActorType;
+import com.chapchap.customer.domain.audit.constant.AuditActionType;
+import com.chapchap.customer.domain.audit.constant.AuditActorType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.faq.entity.Faq;

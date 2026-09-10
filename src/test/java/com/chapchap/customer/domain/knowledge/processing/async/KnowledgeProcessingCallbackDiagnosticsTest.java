@@ -1,9 +1,15 @@
 package com.chapchap.customer.domain.knowledge.processing.async;
 
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticOutcome;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
+import com.chapchap.customer.domain.knowledge.constant.processing.async.KnowledgeProcessingCallbackOutcome;
+import com.chapchap.customer.domain.knowledge.dto.processing.async.KnowledgeProcessingCallbackHeaders;
+import com.chapchap.customer.global.exception.knowledge.processing.async.KnowledgeProcessingCallbackException;
+import com.chapchap.customer.domain.knowledge.service.processing.async.KnowledgeProcessingCallbackConsumer;
+import com.chapchap.customer.domain.knowledge.service.processing.async.KnowledgeProcessingCallbackParser;
+
+import com.chapchap.customer.domain.customerai.dto.observability.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticOutcome;
+import com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticPublisher;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
@@ -90,7 +96,7 @@ class KnowledgeProcessingCallbackDiagnosticsTest {
 
     private KnowledgeProcessingCallbackConsumer consumer(
             KnowledgeProcessingCallbackOutcome outcome,
-            com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink sink
+            com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticSink sink
     ) {
         return new KnowledgeProcessingCallbackConsumer(
                 new KnowledgeProcessingCallbackParser(new ObjectMapper()),

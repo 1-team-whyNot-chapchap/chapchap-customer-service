@@ -45,7 +45,7 @@ class CustomerRealtimeIntegrationTest {
             try (var reader = new java.io.BufferedReader(new java.io.InputStreamReader(response.body(), java.nio.charset.StandardCharsets.UTF_8))) {
                 assertThat(executor.submit(() -> readEvent(reader)).get(5, TimeUnit.SECONDS)).contains("event:ready");
                 streams.publish(7L, new com.chapchap.customer.domain.notification.response.NotificationResponse(
-                        1L, com.chapchap.customer.domain.notification.entity.NotificationType.values()[0],
+                        1L, com.chapchap.customer.domain.notification.constant.NotificationType.values()[0],
                         "integration-notification", "content", "CONSULTATION", "3", LocalDateTime.now(), false));
                 assertThat(executor.submit(() -> readEvent(reader)).get(5, TimeUnit.SECONDS))
                         .contains("event:notification", "integration-notification");

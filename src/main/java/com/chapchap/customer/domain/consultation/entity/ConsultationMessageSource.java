@@ -1,7 +1,9 @@
 package com.chapchap.customer.domain.consultation.entity;
 
+import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType;
+
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
-import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.notification.response;
 
 import com.chapchap.customer.domain.notification.entity.Notification;
-import com.chapchap.customer.domain.notification.entity.NotificationType;
+import com.chapchap.customer.domain.notification.constant.NotificationType;
 
 import java.time.LocalDateTime;
 

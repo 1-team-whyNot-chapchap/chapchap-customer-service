@@ -1,5 +1,10 @@
 package com.chapchap.customer.domain.audit.entity;
 
+import com.chapchap.customer.domain.audit.constant.AuditActionType;
+import com.chapchap.customer.domain.audit.constant.AuditActorType;
+import com.chapchap.customer.domain.audit.constant.AuditResult;
+import com.chapchap.customer.domain.audit.constant.AuditTargetType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

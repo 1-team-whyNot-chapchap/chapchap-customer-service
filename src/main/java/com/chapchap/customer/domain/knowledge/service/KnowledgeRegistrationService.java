@@ -1,10 +1,10 @@
 package com.chapchap.customer.domain.knowledge.service;
 
-import com.chapchap.customer.domain.knowledge.file.KnowledgeFileValidator;
-import com.chapchap.customer.domain.knowledge.file.ValidatedKnowledgeFile;
+import com.chapchap.customer.domain.knowledge.service.file.KnowledgeFileValidator;
+import com.chapchap.customer.domain.knowledge.dto.file.ValidatedKnowledgeFile;
 import com.chapchap.customer.domain.knowledge.request.KnowledgeVersionRegisterRequest;
 import com.chapchap.customer.domain.knowledge.response.KnowledgeVersionResponse;
-import com.chapchap.customer.domain.knowledge.storage.KnowledgeObjectStorage;
+import com.chapchap.customer.domain.knowledge.service.storage.KnowledgeObjectStorage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

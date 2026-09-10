@@ -6,7 +6,7 @@ import com.chapchap.customer.domain.faq.repository.FaqRepository;
 import com.chapchap.customer.domain.faq.request.FaqCreateRequest;
 import com.chapchap.customer.domain.faq.request.FaqUpdateRequest;
 import com.chapchap.customer.domain.faq.response.FaqResponse;
-import com.chapchap.customer.global.error.custom.faq.FaqNotFoundException;
+import com.chapchap.customer.global.exception.faq.FaqNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

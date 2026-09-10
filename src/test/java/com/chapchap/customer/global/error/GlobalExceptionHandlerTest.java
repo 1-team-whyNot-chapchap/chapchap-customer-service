@@ -1,9 +1,9 @@
 package com.chapchap.customer.global.error;
 
 import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.global.error.custom.faq.FaqNotFoundException;
-import com.chapchap.customer.global.error.custom.knowledge.KnowledgeProcessingContractException;
-import com.chapchap.customer.global.error.custom.knowledge.KnowledgeVersionStateException;
+import com.chapchap.customer.global.exception.faq.FaqNotFoundException;
+import com.chapchap.customer.global.exception.knowledge.KnowledgeProcessingContractException;
+import com.chapchap.customer.global.exception.knowledge.KnowledgeVersionStateException;
 import com.chapchap.customer.global.response.GlobalResponse;
 import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import org.junit.jupiter.api.Test;

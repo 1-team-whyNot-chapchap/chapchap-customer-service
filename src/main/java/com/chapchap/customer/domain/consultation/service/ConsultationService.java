@@ -2,11 +2,11 @@ package com.chapchap.customer.domain.consultation.service;
 
 import com.chapchap.customer.domain.consultation.entity.Consultation;
 import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
-import com.chapchap.customer.domain.consultation.entity.ConsultationSenderType;
-import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
-import com.chapchap.customer.domain.consultation.event.ConsultationMessageSavedEvent;
-import com.chapchap.customer.domain.consultation.event.ConsultationAiResponseRequestedEvent;
-import com.chapchap.customer.domain.consultation.event.ConsultationClosedEvent;
+import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType;
+import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationAiResponseRequestedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationClosedEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.response.AdminConsultationResponse;
 import com.chapchap.customer.domain.audit.service.AuditLogWriter;
@@ -17,8 +17,8 @@ import com.chapchap.customer.domain.consultation.response.ConsultationCreatedRes
 import com.chapchap.customer.domain.consultation.response.ConsultationMessageResponse;
 import com.chapchap.customer.domain.consultation.response.ConsultationMessagesResponse;
 import com.chapchap.customer.domain.consultation.response.ConsultationResponse;
-import com.chapchap.customer.global.error.custom.consultation.ConsultationNotFoundException;
-import com.chapchap.customer.global.error.custom.consultation.ConsultationStateException;
+import com.chapchap.customer.global.exception.consultation.ConsultationNotFoundException;
+import com.chapchap.customer.global.exception.consultation.ConsultationStateException;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import lombok.RequiredArgsConstructor;

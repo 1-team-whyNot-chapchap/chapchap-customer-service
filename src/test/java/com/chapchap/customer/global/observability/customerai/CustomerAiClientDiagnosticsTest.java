@@ -1,19 +1,24 @@
 package com.chapchap.customer.global.observability.customerai;
 
-import com.chapchap.customer.domain.consultation.ai.CustomerAiConsultationCommand;
-import com.chapchap.customer.domain.consultation.ai.CustomerAiConsultationResponseParser;
-import com.chapchap.customer.domain.consultation.ai.HttpCustomerAiConsultationClient;
-import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
-import com.chapchap.customer.domain.consultation.summary.CustomerAiConsultationSummaryCommand;
-import com.chapchap.customer.domain.consultation.summary.CustomerAiConsultationSummaryResponseParser;
-import com.chapchap.customer.domain.consultation.summary.HttpCustomerAiConsultationSummaryClient;
-import com.chapchap.customer.domain.knowledge.processing.async.CustomerAiKnowledgeJobCommand;
-import com.chapchap.customer.domain.knowledge.processing.async.CustomerAiKnowledgeJobResponseParser;
-import com.chapchap.customer.domain.knowledge.processing.async.HttpCustomerAiKnowledgeJobClient;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticEventType;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.domain.customerai.dto.observability.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticPublisher;
+
+import com.chapchap.customer.domain.consultation.dto.ai.CustomerAiConsultationCommand;
+import com.chapchap.customer.domain.consultation.service.ai.CustomerAiConsultationResponseParser;
+import com.chapchap.customer.domain.consultation.service.ai.HttpCustomerAiConsultationClient;
+import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
+import com.chapchap.customer.domain.consultation.dto.summary.CustomerAiConsultationSummaryCommand;
+import com.chapchap.customer.domain.consultation.service.summary.CustomerAiConsultationSummaryResponseParser;
+import com.chapchap.customer.domain.consultation.service.summary.HttpCustomerAiConsultationSummaryClient;
+import com.chapchap.customer.domain.knowledge.dto.processing.async.CustomerAiKnowledgeJobCommand;
+import com.chapchap.customer.domain.knowledge.service.processing.async.CustomerAiKnowledgeJobResponseParser;
+import com.chapchap.customer.domain.knowledge.service.processing.async.HttpCustomerAiKnowledgeJobClient;
 import com.chapchap.customer.global.security.constant.RolePolicy;
-import com.chapchap.customer.global.security.customerai.CustomerAiAuthenticationUnavailableException;
-import com.chapchap.customer.global.security.customerai.CustomerAiRequestCredentialsProvider;
-import com.chapchap.customer.global.security.customerai.CustomerAiSubjectAssertionRequest;
+import com.chapchap.customer.global.exception.customerai.security.CustomerAiAuthenticationUnavailableException;
+import com.chapchap.customer.domain.customerai.service.security.CustomerAiRequestCredentialsProvider;
+import com.chapchap.customer.domain.customerai.request.security.CustomerAiSubjectAssertionRequest;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;

@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.notification.repository;
 
 import com.chapchap.customer.domain.notification.entity.Notification;
-import com.chapchap.customer.domain.notification.entity.NotificationRecipientType;
+import com.chapchap.customer.domain.notification.constant.NotificationRecipientType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

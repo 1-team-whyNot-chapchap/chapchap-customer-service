@@ -22,17 +22,17 @@ public interface ConsultationRepository extends JpaRepository<Consultation, Long
     @Query("select consultation from Consultation consultation where consultation.id = :consultationId")
     Optional<Consultation> findByIdForMessageWrite(@Param("consultationId") Long consultationId);
 
-    List<Consultation> findByStatusOrderByCreatedAtAsc(com.chapchap.customer.domain.consultation.entity.ConsultationStatus status);
+    List<Consultation> findByStatusOrderByCreatedAtAsc(com.chapchap.customer.domain.consultation.constant.ConsultationStatus status);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("""
             update Consultation consultation
-               set consultation.status = com.chapchap.customer.domain.consultation.entity.ConsultationStatus.IN_PROGRESS,
+               set consultation.status = com.chapchap.customer.domain.consultation.constant.ConsultationStatus.IN_PROGRESS,
                    consultation.assignedAdminId = :adminId,
                    consultation.assignedAt = :now,
                    consultation.updatedAt = :now
              where consultation.id = :consultationId
-               and consultation.status = com.chapchap.customer.domain.consultation.entity.ConsultationStatus.WAITING_ADMIN
+               and consultation.status = com.chapchap.customer.domain.consultation.constant.ConsultationStatus.WAITING_ADMIN
                and consultation.assignedAdminId is null
             """)
     int acceptWaitingConsultation(@Param("consultationId") Long consultationId, @Param("adminId") Long adminId,

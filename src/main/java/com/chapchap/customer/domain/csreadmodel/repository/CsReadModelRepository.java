@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.csreadmodel.repository;
 
 import com.chapchap.customer.domain.csreadmodel.entity.CsReadModel;
-import com.chapchap.customer.domain.csreadmodel.entity.CsReadModelProjectionType;
+import com.chapchap.customer.domain.csreadmodel.constant.CsReadModelProjectionType;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

@@ -1,9 +1,9 @@
 package com.chapchap.customer.domain.audit.request;
 
-import com.chapchap.customer.domain.audit.entity.AuditActionType;
-import com.chapchap.customer.domain.audit.entity.AuditActorType;
-import com.chapchap.customer.domain.audit.entity.AuditResult;
-import com.chapchap.customer.domain.audit.entity.AuditTargetType;
+import com.chapchap.customer.domain.audit.constant.AuditActionType;
+import com.chapchap.customer.domain.audit.constant.AuditActorType;
+import com.chapchap.customer.domain.audit.constant.AuditResult;
+import com.chapchap.customer.domain.audit.constant.AuditTargetType;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Size;

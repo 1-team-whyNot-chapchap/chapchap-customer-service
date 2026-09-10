@@ -1,10 +1,16 @@
 package com.chapchap.customer.domain.consultation.ai.currentstate;
 
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEventType;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticOutcome;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
+import com.chapchap.customer.domain.consultation.constant.ai.currentstate.CurrentStateCapability;
+import com.chapchap.customer.domain.consultation.service.ai.currentstate.TrustedCurrentStateContext;
+import com.chapchap.customer.global.exception.consultation.ai.currentstate.CurrentStateAccessException;
+import com.chapchap.customer.domain.consultation.request.ai.currentstate.CurrentStateAccessRequest;
+import com.chapchap.customer.domain.consultation.service.ai.currentstate.CurrentStateTrustedContextBoundary;
+
+import com.chapchap.customer.domain.customerai.dto.observability.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticEventType;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticOutcome;
+import com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticPublisher;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import org.junit.jupiter.api.Test;

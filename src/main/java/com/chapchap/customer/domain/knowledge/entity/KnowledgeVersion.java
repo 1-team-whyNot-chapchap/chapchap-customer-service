@@ -1,6 +1,8 @@
 package com.chapchap.customer.domain.knowledge.entity;
 
-import com.chapchap.customer.global.error.custom.knowledge.KnowledgeVersionStateException;
+import com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus;
+
+import com.chapchap.customer.global.exception.knowledge.KnowledgeVersionStateException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

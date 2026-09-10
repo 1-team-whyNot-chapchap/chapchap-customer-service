@@ -1,8 +1,13 @@
 package com.chapchap.customer.domain.knowledge.processing.async;
 
+import com.chapchap.customer.domain.knowledge.entity.processing.async.KnowledgeProcessingAttempt;
+import com.chapchap.customer.domain.knowledge.entity.processing.async.KnowledgeProcessingJob;
+import com.chapchap.customer.domain.knowledge.repository.processing.async.KnowledgeProcessingAttemptRepository;
+import com.chapchap.customer.domain.knowledge.repository.processing.async.KnowledgeProcessingJobRepository;
+
 import jakarta.persistence.EntityManager;
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
-import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.junit.jupiter.api.Test;

@@ -1,9 +1,15 @@
 package com.chapchap.customer.domain.consultation.summary;
 
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticEvent;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticFailureCode;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticOutcome;
-import com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticPublisher;
+import com.chapchap.customer.domain.consultation.constant.summary.ConsultationSummaryCallbackOutcome;
+import com.chapchap.customer.domain.consultation.dto.summary.ConsultationSummaryCallbackHeaders;
+import com.chapchap.customer.global.exception.consultation.summary.ConsultationSummaryCallbackException;
+import com.chapchap.customer.domain.consultation.service.summary.ConsultationSummaryCallbackConsumer;
+import com.chapchap.customer.domain.consultation.service.summary.ConsultationSummaryCallbackParser;
+
+import com.chapchap.customer.domain.customerai.dto.observability.CustomerAiDiagnosticEvent;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticFailureCode;
+import com.chapchap.customer.domain.customerai.constant.observability.CustomerAiDiagnosticOutcome;
+import com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticPublisher;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.ObjectMapper;
 
@@ -78,7 +84,7 @@ class ConsultationSummaryCallbackDiagnosticsTest {
 
     private ConsultationSummaryCallbackConsumer consumer(
             ConsultationSummaryCallbackOutcome outcome,
-            com.chapchap.customer.global.observability.customerai.CustomerAiDiagnosticSink sink
+            com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticSink sink
     ) {
         return new ConsultationSummaryCallbackConsumer(
                 new ConsultationSummaryCallbackParser(new ObjectMapper()),

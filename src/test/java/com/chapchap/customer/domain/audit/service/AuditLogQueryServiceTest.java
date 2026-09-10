@@ -1,10 +1,10 @@
 package com.chapchap.customer.domain.audit.service;
 
-import com.chapchap.customer.domain.audit.entity.AuditActionType;
+import com.chapchap.customer.domain.audit.constant.AuditActionType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.audit.request.AuditLogSearchRequest;
-import com.chapchap.customer.global.error.custom.audit.AuditLogQueryValidationException;
+import com.chapchap.customer.global.exception.audit.AuditLogQueryValidationException;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

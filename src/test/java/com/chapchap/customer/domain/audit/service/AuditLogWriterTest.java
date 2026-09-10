@@ -1,12 +1,12 @@
 package com.chapchap.customer.domain.audit.service;
 
-import com.chapchap.customer.domain.audit.entity.AuditActionType;
+import com.chapchap.customer.domain.audit.constant.AuditActionType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.faq.entity.Faq;
 import com.chapchap.customer.domain.quality.entity.QualityInquiry;
-import com.chapchap.customer.domain.quality.entity.QualityInquiryStatus;
-import com.chapchap.customer.domain.quality.entity.QualityInquiryType;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryStatus;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryType;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -68,7 +68,7 @@ class AuditLogWriterTest {
 
         ArgumentCaptor<AuditLog> captor = ArgumentCaptor.forClass(AuditLog.class);
         verify(auditLogRepository).save(captor.capture());
-        assertThat(captor.getValue().getActionType()).isEqualTo(com.chapchap.customer.domain.audit.entity.AuditActionType.QUALITY_INQUIRY_PROCESSED);
+        assertThat(captor.getValue().getActionType()).isEqualTo(com.chapchap.customer.domain.audit.constant.AuditActionType.QUALITY_INQUIRY_PROCESSED);
         Map<?, ?> beforeDetail = (Map<?, ?>) captor.getValue().getDetail().get("before");
         Map<?, ?> afterDetail = (Map<?, ?>) captor.getValue().getDetail().get("after");
         assertThat(beforeDetail.get("status")).isEqualTo("RECEIVED");

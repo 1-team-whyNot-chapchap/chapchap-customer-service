@@ -1,8 +1,8 @@
 package com.chapchap.customer.domain.quality.response;
 
 import com.chapchap.customer.domain.quality.entity.QualityInquiry;
-import com.chapchap.customer.domain.quality.entity.QualityInquiryStatus;
-import com.chapchap.customer.domain.quality.entity.QualityInquiryType;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryStatus;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryType;
 
 import java.time.LocalDateTime;
 import java.util.List;

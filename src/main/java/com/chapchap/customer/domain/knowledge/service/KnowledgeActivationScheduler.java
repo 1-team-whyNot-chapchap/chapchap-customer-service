@@ -1,6 +1,6 @@
 package com.chapchap.customer.domain.knowledge.service;
 
-import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

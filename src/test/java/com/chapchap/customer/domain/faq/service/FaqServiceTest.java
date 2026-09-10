@@ -5,7 +5,7 @@ import com.chapchap.customer.domain.faq.entity.Faq;
 import com.chapchap.customer.domain.faq.repository.FaqRepository;
 import com.chapchap.customer.domain.faq.request.FaqCreateRequest;
 import com.chapchap.customer.domain.faq.request.FaqUpdateRequest;
-import com.chapchap.customer.global.error.custom.faq.FaqNotFoundException;
+import com.chapchap.customer.global.exception.faq.FaqNotFoundException;
 import com.chapchap.customer.global.error.custom.BusinessException;
 import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import org.junit.jupiter.api.BeforeEach;

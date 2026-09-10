@@ -1,5 +1,8 @@
 package com.chapchap.customer.global.security;
 
+import com.chapchap.customer.global.security.context.CurrentAccountVerifier;
+import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
+
 import com.chapchap.customer.global.security.context.*;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.sun.net.httpserver.HttpServer;

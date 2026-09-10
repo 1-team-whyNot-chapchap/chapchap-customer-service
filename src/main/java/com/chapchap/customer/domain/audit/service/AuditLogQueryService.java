@@ -1,11 +1,11 @@
 package com.chapchap.customer.domain.audit.service;
 
 import com.chapchap.customer.domain.audit.entity.AuditLog;
-import com.chapchap.customer.domain.audit.entity.AuditTargetType;
+import com.chapchap.customer.domain.audit.constant.AuditTargetType;
 import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
 import com.chapchap.customer.domain.audit.request.AuditLogSearchRequest;
 import com.chapchap.customer.domain.audit.response.AuditLogPageResponse;
-import com.chapchap.customer.global.error.custom.audit.AuditLogQueryValidationException;
+import com.chapchap.customer.global.exception.audit.AuditLogQueryValidationException;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;

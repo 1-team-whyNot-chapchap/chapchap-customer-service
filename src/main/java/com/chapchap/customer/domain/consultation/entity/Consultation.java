@@ -1,6 +1,8 @@
 package com.chapchap.customer.domain.consultation.entity;
 
-import com.chapchap.customer.global.error.custom.consultation.ConsultationStateException;
+import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
+
+import com.chapchap.customer.global.exception.consultation.ConsultationStateException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

@@ -1,9 +1,9 @@
 package com.chapchap.customer.global.error;
 
 import com.chapchap.customer.global.error.custom.BusinessException;
-import com.chapchap.customer.domain.consultation.summary.ConsultationSummaryCallbackException;
-import com.chapchap.customer.domain.knowledge.processing.async.KnowledgeProcessingCallbackException;
-import com.chapchap.customer.global.error.custom.customerai.CustomerAiCallbackAuthenticationException;
+import com.chapchap.customer.global.exception.consultation.summary.ConsultationSummaryCallbackException;
+import com.chapchap.customer.global.exception.knowledge.processing.async.KnowledgeProcessingCallbackException;
+import com.chapchap.customer.global.exception.customerai.CustomerAiCallbackAuthenticationException;
 import com.chapchap.customer.global.response.GlobalResponse;
 import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import lombok.extern.slf4j.Slf4j;

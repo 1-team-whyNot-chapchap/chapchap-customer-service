@@ -2,10 +2,10 @@ package com.chapchap.customer.domain.consultation.service;
 
 import com.chapchap.customer.domain.consultation.entity.Consultation;
 import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
-import com.chapchap.customer.domain.consultation.entity.ConsultationStatus;
-import com.chapchap.customer.domain.consultation.event.ConsultationMessageSavedEvent;
-import com.chapchap.customer.domain.consultation.event.ConsultationAiResponseRequestedEvent;
-import com.chapchap.customer.domain.consultation.event.ConsultationClosedEvent;
+import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationAiResponseRequestedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationClosedEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
@@ -78,7 +78,7 @@ class ConsultationServiceTest {
         assertThat(response.consultationId()).isEqualTo(1L);
         assertThat(response.status()).isEqualTo(ConsultationStatus.AI_HANDLING);
         assertThat(response.initialMessage().messageId()).isEqualTo(10L);
-        assertThat(firstMessage.getSenderType()).isEqualTo(com.chapchap.customer.domain.consultation.entity.ConsultationSenderType.USER);
+        assertThat(firstMessage.getSenderType()).isEqualTo(com.chapchap.customer.domain.consultation.constant.ConsultationSenderType.USER);
         assertThat(firstMessage.getSenderUserId()).isEqualTo(7L);
         assertThat(firstMessage.getSequenceNo()).isEqualTo(1);
         assertThat(firstMessage.getContent()).isEqualTo("배송 문의");

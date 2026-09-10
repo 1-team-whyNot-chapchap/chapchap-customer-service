@@ -1,10 +1,10 @@
 package com.chapchap.customer.domain.audit.response;
 
-import com.chapchap.customer.domain.audit.entity.AuditActionType;
-import com.chapchap.customer.domain.audit.entity.AuditActorType;
+import com.chapchap.customer.domain.audit.constant.AuditActionType;
+import com.chapchap.customer.domain.audit.constant.AuditActorType;
 import com.chapchap.customer.domain.audit.entity.AuditLog;
-import com.chapchap.customer.domain.audit.entity.AuditResult;
-import com.chapchap.customer.domain.audit.entity.AuditTargetType;
+import com.chapchap.customer.domain.audit.constant.AuditResult;
+import com.chapchap.customer.domain.audit.constant.AuditTargetType;
 
 import java.time.LocalDateTime;
 import java.util.Map;

@@ -2,11 +2,11 @@ package com.chapchap.customer.domain.knowledge.service;
 
 import com.chapchap.customer.domain.audit.service.AuditLogWriter;
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeDocument;
-import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus;
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeDocumentRepository;
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
-import com.chapchap.customer.global.error.custom.knowledge.KnowledgeProcessingStateException;
+import com.chapchap.customer.global.exception.knowledge.KnowledgeProcessingStateException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

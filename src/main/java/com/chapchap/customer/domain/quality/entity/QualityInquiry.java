@@ -1,7 +1,10 @@
 package com.chapchap.customer.domain.quality.entity;
 
-import com.chapchap.customer.global.error.custom.quality.QualityInquiryStateException;
-import com.chapchap.customer.global.error.custom.quality.QualityInquiryValidationException;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryStatus;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryType;
+
+import com.chapchap.customer.global.exception.quality.QualityInquiryStateException;
+import com.chapchap.customer.global.exception.quality.QualityInquiryValidationException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

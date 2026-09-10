@@ -1,5 +1,7 @@
 package com.chapchap.customer.domain.csreadmodel.entity;
 
+import com.chapchap.customer.domain.csreadmodel.constant.CsReadModelProjectionType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

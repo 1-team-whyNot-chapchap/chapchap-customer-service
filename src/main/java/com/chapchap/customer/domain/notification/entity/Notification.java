@@ -1,5 +1,8 @@
 package com.chapchap.customer.domain.notification.entity;
 
+import com.chapchap.customer.domain.notification.constant.NotificationRecipientType;
+import com.chapchap.customer.domain.notification.constant.NotificationType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

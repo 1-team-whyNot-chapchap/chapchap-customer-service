@@ -1,5 +1,9 @@
 package com.chapchap.customer.domain.consultation.ai.currentstate;
 
+import com.chapchap.customer.domain.consultation.constant.ai.currentstate.CurrentStateAvailability;
+import com.chapchap.customer.domain.consultation.constant.ai.currentstate.CurrentStateCapability;
+import com.chapchap.customer.domain.consultation.constant.ai.currentstate.CurrentStateErrorCode;
+
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import tools.jackson.databind.JsonNode;

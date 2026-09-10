@@ -1,11 +1,11 @@
 package com.chapchap.customer.domain.csreadmodel.service;
 
 import com.chapchap.customer.domain.csreadmodel.entity.CsReadModel;
-import com.chapchap.customer.domain.csreadmodel.entity.CsReadModelProjectionType;
+import com.chapchap.customer.domain.csreadmodel.constant.CsReadModelProjectionType;
 import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
-import com.chapchap.customer.global.kafka.event.CustomerKafkaEvent;
-import com.chapchap.customer.global.kafka.event.CustomerKafkaEventType;
-import com.chapchap.customer.global.kafka.service.CustomerKafkaEventValidator;
+import com.chapchap.customer.global.messaging.kafka.event.CustomerKafkaEvent;
+import com.chapchap.customer.global.messaging.kafka.event.CustomerKafkaEventType;
+import com.chapchap.customer.global.messaging.kafka.service.CustomerKafkaEventValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

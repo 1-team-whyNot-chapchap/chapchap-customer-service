@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.knowledge.repository;
 
 import com.chapchap.customer.domain.knowledge.entity.KnowledgeVersion;
-import com.chapchap.customer.domain.knowledge.entity.KnowledgeProcessingStatus;
+import com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;

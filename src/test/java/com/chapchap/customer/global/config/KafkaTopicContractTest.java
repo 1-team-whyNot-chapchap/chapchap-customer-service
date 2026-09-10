@@ -1,6 +1,6 @@
 package com.chapchap.customer.global.config;
 
-import com.chapchap.customer.global.kafka.consumer.CustomerKafkaEventConsumer;
+import com.chapchap.customer.global.messaging.kafka.consumer.CustomerKafkaEventConsumer;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.env.YamlPropertySourceLoader;

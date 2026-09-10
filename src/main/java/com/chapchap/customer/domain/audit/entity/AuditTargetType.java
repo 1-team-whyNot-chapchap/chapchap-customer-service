@@ -1,8 +1,0 @@
-package com.chapchap.customer.domain.audit.entity;
-
-public enum AuditTargetType {
-    FAQ,
-    CONSULTATION,
-    QUALITY_INQUIRY,
-    KNOWLEDGE_VERSION
-}

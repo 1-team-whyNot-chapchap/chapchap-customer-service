@@ -1,5 +1,10 @@
 package com.chapchap.customer.domain.consultation.summary;
 
+import com.chapchap.customer.domain.consultation.entity.summary.ConsultationSummary;
+import com.chapchap.customer.domain.consultation.entity.summary.ConsultationSummaryJob;
+import com.chapchap.customer.domain.consultation.repository.summary.ConsultationSummaryJobRepository;
+import com.chapchap.customer.domain.consultation.repository.summary.ConsultationSummaryRepository;
+
 import jakarta.persistence.EntityManager;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;

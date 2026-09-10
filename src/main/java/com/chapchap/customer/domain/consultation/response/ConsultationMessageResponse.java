@@ -1,7 +1,7 @@
 package com.chapchap.customer.domain.consultation.response;
 
 import com.chapchap.customer.domain.consultation.entity.ConsultationMessage;
-import com.chapchap.customer.domain.consultation.entity.ConsultationSenderType;
+import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType;
 
 import java.time.LocalDateTime;
 

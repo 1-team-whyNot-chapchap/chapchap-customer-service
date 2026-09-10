@@ -1,5 +1,7 @@
 package com.chapchap.customer.domain.consultation.entity;
 
+import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;

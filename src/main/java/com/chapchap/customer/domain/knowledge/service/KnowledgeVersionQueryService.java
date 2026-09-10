@@ -2,7 +2,7 @@ package com.chapchap.customer.domain.knowledge.service;
 
 import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
 import com.chapchap.customer.domain.knowledge.response.KnowledgeVersionResponse;
-import com.chapchap.customer.global.error.custom.knowledge.KnowledgeVersionNotFoundException;
+import com.chapchap.customer.global.exception.knowledge.KnowledgeVersionNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

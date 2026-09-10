@@ -1,6 +1,6 @@
 package com.chapchap.customer.domain.quality.request;
 
-import com.chapchap.customer.domain.quality.entity.QualityInquiryType;
+import com.chapchap.customer.domain.quality.constant.QualityInquiryType;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;

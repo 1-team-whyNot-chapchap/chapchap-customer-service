@@ -1,10 +1,10 @@
 package com.chapchap.customer.schema;
 
-import java.nio.file.Path;
+
 import java.util.Map;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
-import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.init.ScriptUtils;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
@@ -23,7 +23,7 @@ class SchemaSqlTest {
                     connection.getCatalog(), connection.getSchema(), "%", new String[]{"TABLE"})) {
                 assertThat(existing.next()).as("Schema test requires an empty, isolated database").isFalse();
             }
-            var script = new FileSystemResource(Path.of("sql/schema.sql"));
+            var script = new ClassPathResource("schema/schema.sql");
             ScriptUtils.executeSqlScript(connection, script);
             int tableCount = 0;
             try (var tables = connection.getMetaData().getTables(connection.getCatalog(), connection.getSchema(), "%", new String[]{"TABLE"})) {

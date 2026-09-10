@@ -2,11 +2,11 @@ package com.chapchap.customer.domain.notification.service;
 
 import com.chapchap.customer.domain.notification.entity.Notification;
 import com.chapchap.customer.domain.notification.entity.NotificationRead;
-import com.chapchap.customer.domain.notification.entity.NotificationRecipientType;
+import com.chapchap.customer.domain.notification.constant.NotificationRecipientType;
 import com.chapchap.customer.domain.notification.repository.NotificationReadRepository;
 import com.chapchap.customer.domain.notification.repository.NotificationRepository;
 import com.chapchap.customer.domain.notification.response.NotificationResponse;
-import com.chapchap.customer.global.error.custom.notification.NotificationNotFoundException;
+import com.chapchap.customer.global.exception.notification.NotificationNotFoundException;
 import com.chapchap.customer.global.security.constant.RolePolicy;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import lombok.RequiredArgsConstructor;

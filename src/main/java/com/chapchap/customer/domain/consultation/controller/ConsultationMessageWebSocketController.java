@@ -3,7 +3,7 @@ package com.chapchap.customer.domain.consultation.controller;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.service.ConsultationService;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
-import com.chapchap.customer.global.security.websocket.TrustedUserContextHandshakeInterceptor;
+import com.chapchap.customer.domain.consultation.service.websocket.TrustedUserContextHandshakeInterceptor;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
