@@ -60,6 +60,23 @@ class CustomerAiCallbackRuntimeConfigurationTest {
     }
 
     @Test
+    void academyHttpExceptionsBindAndCreateAuthenticatedClients() {
+        runner.withUserConfiguration(CustomerAiKnowledgeProcessingConfiguration.class, LateTokenConfiguration.class)
+                .withPropertyValues("customer.ai.callback-auth.enabled=true",
+                        "customer.ai.callback-auth.jwks-url=http://auth-service/.well-known/jwks.json",
+                        "customer.ai.transport.http-allowed-origins=http://auth-service:80,http://customer-ai-service:8085",
+                        "customer.ai.knowledge-processing.async-enabled=true",
+                        "customer.ai.consultation-summary.async-enabled=true",
+                        "customer.ai.knowledge-processing.base-url=http://customer-ai-service:8085")
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(CustomerAiCallbackJwtVerifier.class);
+                    assertThat(context).hasSingleBean(HttpCustomerAiKnowledgeJobClient.class);
+                    assertThat(context).hasSingleBean(HttpCustomerAiConsultationSummaryClient.class);
+                });
+    }
+
+    @Test
     void enabledClientsResolveTokenProviderRegisteredByLaterConfiguration() {
         runner.withUserConfiguration(CustomerAiKnowledgeProcessingConfiguration.class, LateTokenConfiguration.class)
                 .withPropertyValues("customer.ai.callback-auth.enabled=true",

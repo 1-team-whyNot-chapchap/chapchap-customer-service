@@ -24,6 +24,9 @@ import java.time.ZoneId;
 @Configuration(proxyBeanMethods = false)
 @EnableConfigurationProperties(CustomerAiInternalAuthProperties.class)
 public class CustomerAiInternalAuthConfiguration {
+    @org.springframework.beans.factory.annotation.Value("${customer.ai.transport.http-allowed-origins:}")
+    private String httpAllowedOrigins = "";
+
     @Bean("customerAiAuthRestClient")
     @ConditionalOnProperty(prefix = "customer.ai.internal-auth", name = "enabled", havingValue = "true")
     RestClient customerAiAuthRestClient(CustomerAiInternalAuthProperties properties) {
@@ -31,7 +34,7 @@ public class CustomerAiInternalAuthConfiguration {
         requirePositive(properties.getConnectTimeoutMilliseconds(), "connect timeout");
         requirePositive(properties.getReadTimeoutMilliseconds(), "read timeout");
 
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory requestFactory = new NoRedirectClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getConnectTimeoutMilliseconds());
         requestFactory.setReadTimeout(properties.getReadTimeoutMilliseconds());
         return RestClient.builder()
@@ -101,10 +104,10 @@ public class CustomerAiInternalAuthConfiguration {
         return CustomerAiSubjectJwksDocument.from(properties.getSubjectKeyId(), keyMaterial.publicKey());
     }
 
-    private static void validateHttpsOrigin(String value) {
+    private void validateHttpsOrigin(String value) {
         try {
             URI uri = URI.create(value);
-            if (!"https".equalsIgnoreCase(uri.getScheme())
+            if (!CustomerAiTransportPolicy.allows(uri, httpAllowedOrigins)
                     || uri.getHost() == null
                     || uri.getUserInfo() != null
                     || uri.getQuery() != null

@@ -27,6 +27,9 @@ import java.util.UUID;
         havingValue = "true"
 )
 public class KnowledgeAsyncProcessingOrchestrator {
+    @org.springframework.beans.factory.annotation.Value("${customer.ai.transport.source-http-allowed-origins:}")
+    private String sourceHttpAllowedOrigins = "";
+
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
     private static final Clock KST_CLOCK = Clock.system(KST);
 
@@ -104,7 +107,8 @@ public class KnowledgeAsyncProcessingOrchestrator {
                 new CustomerAiKnowledgeJobCommand.Source(
                         URI.create(knowledgeObjectStorage.createPresignedGetUrl(context.objectKey())),
                         context.contentType(),
-                        context.fileSize()
+                        context.fileSize(),
+                        com.chapchap.customer.global.config.customerai.CustomerAiTransportPolicy.httpOrigins(sourceHttpAllowedOrigins)
                 ),
                 new CustomerAiKnowledgeJobCommand.Metadata(
                         context.documentKey(),

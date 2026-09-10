@@ -38,6 +38,9 @@ import java.time.ZoneId;
 @EnableConfigurationProperties(CustomerAiCallbackAuthProperties.class)
 @ConditionalOnProperty(prefix = "customer.ai.callback-auth", name = "enabled", havingValue = "true")
 public class CustomerAiCallbackRuntimeConfiguration {
+    @org.springframework.beans.factory.annotation.Value("${customer.ai.transport.http-allowed-origins:}")
+    private String httpAllowedOrigins = "";
+
     private static final String REQUIRED_ISSUER = "chapchap-auth-service";
     private static final String REQUIRED_AUDIENCE = "chapchap-customer-service";
     private static final String REQUIRED_SUBJECT = "customer-ai";
@@ -49,7 +52,7 @@ public class CustomerAiCallbackRuntimeConfiguration {
             ObjectMapper objectMapper
     ) {
         validateProperties(properties);
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory requestFactory = new NoRedirectClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getConnectTimeoutMilliseconds());
         requestFactory.setReadTimeout(properties.getReadTimeoutMilliseconds());
         RestClient restClient = RestClient.builder()
@@ -179,7 +182,7 @@ public class CustomerAiCallbackRuntimeConfiguration {
     private void validateHttpsJwksUrl(String value) {
         try {
             URI uri = URI.create(value);
-            if (!"https".equalsIgnoreCase(uri.getScheme())
+            if (!CustomerAiTransportPolicy.allows(uri, httpAllowedOrigins)
                     || uri.getHost() == null
                     || uri.getUserInfo() != null
                     || uri.getQuery() != null
@@ -197,7 +200,7 @@ public class CustomerAiCallbackRuntimeConfiguration {
     private void validateHttpsOrigin(String value) {
         try {
             URI uri = URI.create(value);
-            if (!"https".equalsIgnoreCase(uri.getScheme())
+            if (!CustomerAiTransportPolicy.allows(uri, httpAllowedOrigins)
                     || uri.getHost() == null
                     || uri.getUserInfo() != null
                     || uri.getQuery() != null

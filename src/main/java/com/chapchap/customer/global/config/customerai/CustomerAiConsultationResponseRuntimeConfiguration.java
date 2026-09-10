@@ -24,6 +24,9 @@ import java.net.URI;
         havingValue = "true"
 )
 public class CustomerAiConsultationResponseRuntimeConfiguration {
+    @org.springframework.beans.factory.annotation.Value("${customer.ai.transport.http-allowed-origins:}")
+    private String httpAllowedOrigins = "";
+
     @Bean
     CustomerAiConsultationClient customerAiConsultationClient(
             CustomerAiRequestCredentialsProvider credentialsProvider,
@@ -34,7 +37,7 @@ public class CustomerAiConsultationResponseRuntimeConfiguration {
         validateHttpsOrigin(properties.getBaseUrl());
         requirePositive(properties.getConnectTimeoutMilliseconds(), "connect timeout");
         requirePositive(properties.getReadTimeoutMilliseconds(), "read timeout");
-        SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
+        SimpleClientHttpRequestFactory requestFactory = new NoRedirectClientHttpRequestFactory();
         requestFactory.setConnectTimeout(properties.getConnectTimeoutMilliseconds());
         requestFactory.setReadTimeout(properties.getReadTimeoutMilliseconds());
         RestClient restClient = RestClient.builder()
@@ -52,7 +55,7 @@ public class CustomerAiConsultationResponseRuntimeConfiguration {
     private void validateHttpsOrigin(String value) {
         try {
             URI uri = URI.create(value);
-            if (!"https".equalsIgnoreCase(uri.getScheme())
+            if (!CustomerAiTransportPolicy.allows(uri, httpAllowedOrigins)
                     || uri.getHost() == null
                     || uri.getUserInfo() != null
                     || uri.getQuery() != null
