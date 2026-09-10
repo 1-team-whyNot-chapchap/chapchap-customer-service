@@ -81,7 +81,7 @@ public class CustomerAiCallbackRuntimeConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(CustomerAiServiceTokenProvider.class)
+    @ConditionalOnProperty(prefix = "customer.ai.knowledge-processing", name = "async-enabled", havingValue = "true")
     HttpCustomerAiKnowledgeJobClient httpCustomerAiKnowledgeJobClient(
             @Qualifier("customerAiKnowledgeProcessingRestClient") RestClient restClient,
             CustomerAiServiceTokenProvider tokenProvider,
@@ -98,7 +98,7 @@ public class CustomerAiCallbackRuntimeConfiguration {
     }
 
     @Bean
-    @ConditionalOnBean(CustomerAiServiceTokenProvider.class)
+    @ConditionalOnProperty(prefix = "customer.ai.consultation-summary", name = "async-enabled", havingValue = "true")
     HttpCustomerAiConsultationSummaryClient httpCustomerAiConsultationSummaryClient(
             @Qualifier("customerAiKnowledgeProcessingRestClient") RestClient restClient,
             CustomerAiServiceTokenProvider tokenProvider,
