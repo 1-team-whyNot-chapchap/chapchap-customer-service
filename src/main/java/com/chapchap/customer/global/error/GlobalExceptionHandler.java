@@ -1,8 +1,11 @@
 package com.chapchap.customer.global.error;
 
-import com.chapchap.auth.global.error.custom.BusinessException;
-import com.chapchap.auth.global.response.GlobalResponse;
-import com.chapchap.auth.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.error.custom.BusinessException;
+import com.chapchap.customer.global.exception.consultation.summary.ConsultationSummaryCallbackException;
+import com.chapchap.customer.global.exception.knowledge.processing.async.KnowledgeProcessingCallbackException;
+import com.chapchap.customer.global.exception.customerai.CustomerAiCallbackAuthenticationException;
+import com.chapchap.customer.global.response.GlobalResponse;
+import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DuplicateKeyException;
@@ -31,13 +34,50 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 커스텀 Exceptions 처리
-     * @param e BusinessException
+     * 업무 규칙 실패와 기능별 BusinessException 하위 예외를 처리한다.
+     * 기술/계약 예외는 이 경계에 포함하지 않고 기본 시스템 오류 처리로 전달한다.
      */
     @ExceptionHandler(BusinessException.class)
-    public ResponseEntity<GlobalResponse<Void>> handle(BusinessException e) {
+    public ResponseEntity<GlobalResponse<Void>> handleBusinessException(BusinessException e) {
         log.debug(e.getMessage(), e);
         return this.generateErrorResponse(e.getCustomResponseCode());
+    }
+
+    @ExceptionHandler(CustomerAiCallbackAuthenticationException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleCustomerAiCallbackAuthentication(
+            CustomerAiCallbackAuthenticationException exception
+    ) {
+        CustomResponseCode responseCode = switch (exception.reason()) {
+            case FORBIDDEN_SERVICE -> CustomResponseCode.UNAUTHORIZED_ERROR;
+            case KEY_UNAVAILABLE -> CustomResponseCode.SYSTEM_ERROR;
+            case MISSING_CREDENTIALS, INVALID_TOKEN -> CustomResponseCode.INVALID_TOKEN_ERROR;
+        };
+        log.debug(responseCode.name());
+        return generateErrorResponse(responseCode);
+    }
+
+    @ExceptionHandler(KnowledgeProcessingCallbackException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleKnowledgeProcessingCallback(
+            KnowledgeProcessingCallbackException exception
+    ) {
+        CustomResponseCode responseCode = exception.reason()
+                == KnowledgeProcessingCallbackException.Reason.STATE_CONFLICT
+                ? CustomResponseCode.INVALID_STATE_ERROR
+                : CustomResponseCode.INVALID_PARAMETER_ERROR;
+        log.debug(responseCode.name());
+        return generateErrorResponse(responseCode);
+    }
+
+    @ExceptionHandler(ConsultationSummaryCallbackException.class)
+    public ResponseEntity<GlobalResponse<Void>> handleConsultationSummaryCallback(
+            ConsultationSummaryCallbackException exception
+    ) {
+        CustomResponseCode responseCode = exception.reason()
+                == ConsultationSummaryCallbackException.Reason.STATE_CONFLICT
+                ? CustomResponseCode.INVALID_STATE_ERROR
+                : CustomResponseCode.INVALID_PARAMETER_ERROR;
+        log.debug(responseCode.name());
+        return generateErrorResponse(responseCode);
     }
 
     // -----------------------------------
@@ -50,7 +90,7 @@ public class GlobalExceptionHandler {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         // 로그인하지 않은 익명 사용자가 접근한 경우 (인증 실패 - 401)
-        if (authentication instanceof AnonymousAuthenticationToken) {
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
             return this.generateErrorResponse(CustomResponseCode.UNAUTHENTICATED_ERROR); // E02
         }
 

@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0",
+  "contractStatus": "CANDIDATE",
+  "activationDecision": "BLOCKED",
+  "verifiedPair": {
+    "provider": {
+      "repository": "Customer-Ai",
+      "commit": "6e2d036a46be01030e55c5a0cde261916bfb28c7"
+    },
+    "consumer": {
+      "repository": "chapchap-customer-service",
+      "commit": "a94dcfce45afe0d64c04943ca061d91d4dcb307d"
+    }
+  },
+  "fixture": {
+    "schemaVersion": "1.0",
+    "sha256": "ABE26EB47D4D509785FE2E1C9BA5345D2FE279B1AA0C73D0CAB19A4E38B78862"
+  },
+  "runtimePrerequisites": {
+    "authJwks": "BLOCKED",
+    "privateMinio": "BLOCKED",
+    "chroma": "BLOCKED",
+    "callbackAuthentication": "BLOCKED",
+    "mcpTransport": "BLOCKED",
+    "structuredLogBackend": "BLOCKED"
+  },
+  "runtimeActivation": {
+    "providerRoutersMounted": false,
+    "consumerClientsRegistered": false
+  },
+  "rollbackPolicy": "KEEP_CANDIDATE_ROUTES_UNMOUNTED_AND_CONSUMERS_UNREGISTERED",
+  "matrix": [
+    {
+      "id": "SERVICE_JWT",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "PASS",
+      "blockers": [],
+      "providerEvidence": ["tests/security/test_jwt_verifier.py", "tests/security/test_internal_auth_runtime.py", "tests/security/test_jwks_runtime.py"],
+      "consumerEvidence": ["Rs256CustomerAiSubjectAssertionIssuerTest", "CustomerAiRequestCredentialsProviderTest", "scripts/run-internal-auth-isolated-contract.ps1"]
+    },
+    {
+      "id": "SUBJECT_ASSERTION",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "PASS",
+      "blockers": [],
+      "providerEvidence": ["tests/security/test_jwt_verifier.py", "tests/security/test_internal_auth_runtime.py", "tests/security/test_jwks_runtime.py"],
+      "consumerEvidence": ["Rs256CustomerAiSubjectAssertionIssuerTest", "CurrentStateTrustedContextBoundaryTest", "scripts/run-internal-auth-isolated-contract.ps1"]
+    },
+    {
+      "id": "CONSULTATION",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "BLOCKED",
+      "blockers": ["ISOLATED_ENVIRONMENT_UNAVAILABLE", "ACTIVE_KNOWLEDGE_CONTRACT_UNCONFIRMED"],
+      "providerEvidence": ["tests/consultation/test_candidate_api.py", "tests/consultation/test_response_service.py"],
+      "consumerEvidence": ["HttpCustomerAiConsultationClientTest", "CustomerAiConsultationResponseParserTest"]
+    },
+    {
+      "id": "KNOWLEDGE",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "BLOCKED",
+      "blockers": ["AUTH_JWKS_UNAVAILABLE", "PRIVATE_MINIO_UNAVAILABLE", "CHROMA_UNAVAILABLE", "CALLBACK_AUTH_UNCONFIRMED"],
+      "providerEvidence": ["tests/knowledge/test_candidate_api.py", "tests/knowledge/test_processing_service.py", "tests/knowledge/test_http_adapters.py"],
+      "consumerEvidence": ["HttpCustomerAiKnowledgeJobClientTest", "KnowledgeProcessingCallbackStateMachineTest"]
+    },
+    {
+      "id": "SUMMARY",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "BLOCKED",
+      "blockers": ["AUTH_JWKS_UNAVAILABLE", "CALLBACK_AUTH_UNCONFIRMED", "ISOLATED_ENVIRONMENT_UNAVAILABLE"],
+      "providerEvidence": ["tests/summary/test_candidate_api.py", "tests/summary/test_summary_service.py", "tests/summary/test_http_callback.py"],
+      "consumerEvidence": ["HttpCustomerAiConsultationSummaryClientTest", "ConsultationSummaryCallbackStateMachineTest"]
+    },
+    {
+      "id": "ERROR_HANDLING",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "BLOCKED",
+      "blockers": ["ISOLATED_ENVIRONMENT_UNAVAILABLE"],
+      "providerEvidence": ["tests/contract/test_candidate_fixture.py"],
+      "consumerEvidence": ["CustomerAiCandidateContractTest"]
+    },
+    {
+      "id": "OBSERVABILITY",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "BLOCKED",
+      "blockers": ["STRUCTURED_LOG_BACKEND_UNVERIFIED"],
+      "providerEvidence": ["tests/observability/test_models_and_sinks.py", "tests/observability/test_service_integration.py"],
+      "consumerEvidence": ["CustomerAiDiagnosticEventTest", "CustomerAiDiagnosticPublisherTest", "CustomerAiClientDiagnosticsTest"]
+    },
+    {
+      "id": "RAG_CURRENT_STATE",
+      "provider": "PASS",
+      "consumer": "PASS",
+      "isolatedIntegration": "BLOCKED",
+      "blockers": ["CHROMA_UNAVAILABLE", "MCP_TRANSPORT_UNCONFIRMED", "DOMAIN_READ_ENDPOINTS_UNCONFIRMED"],
+      "providerEvidence": ["tests/current_state/test_adapter.py", "tests/current_state/test_contracts_and_normalization.py"],
+      "consumerEvidence": ["CurrentStateContractRegistryTest", "CurrentStateTrustedContextBoundaryTest"]
+    }
+  ]
+}

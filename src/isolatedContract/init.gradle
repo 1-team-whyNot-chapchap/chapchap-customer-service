@@ -1,0 +1,33 @@
+allprojects {
+    afterEvaluate { evaluatedProject ->
+        if (evaluatedProject != rootProject || !evaluatedProject.hasProperty('isolatedContractSource')) {
+            return
+        }
+
+        def contractSource = evaluatedProject.file(evaluatedProject.property('isolatedContractSource'))
+        def contractOutput = evaluatedProject.property('isolatedContractOutput').toString()
+
+        evaluatedProject.sourceSets {
+            isolatedContract {
+                java.srcDir contractSource
+                compileClasspath = sourceSets.main.output + configurations.testRuntimeClasspath
+                runtimeClasspath = output + compileClasspath
+            }
+        }
+
+        evaluatedProject.configurations {
+            isolatedContractImplementation.extendsFrom testImplementation
+            isolatedContractRuntimeOnly.extendsFrom testRuntimeOnly
+        }
+
+        evaluatedProject.tasks.register('isolatedContractExport', Test) {
+            description = '실제 발급 코드로 격리 인증 Contract 자료를 임시 생성합니다.'
+            group = 'verification'
+            testClassesDirs = evaluatedProject.sourceSets.isolatedContract.output.classesDirs
+            classpath = evaluatedProject.sourceSets.isolatedContract.runtimeClasspath
+            useJUnitPlatform()
+            systemProperty 'contract.outputDir', contractOutput
+            outputs.upToDateWhen { false }
+        }
+    }
+}

@@ -1,13 +1,415 @@
 package com.chapchap.customer;
 
+import com.chapchap.customer.domain.audit.repository.AuditLogRepository;
+import com.chapchap.customer.domain.consultation.service.ai.HttpCustomerAiConsultationClient;
+import com.chapchap.customer.domain.consultation.service.ai.currentstate.CurrentStateTrustedContextBoundary;
+import com.chapchap.customer.domain.consultation.service.summary.ConsultationSummaryCallbackConsumer;
+import com.chapchap.customer.domain.consultation.controller.summary.ConsultationSummaryCallbackController;
+import com.chapchap.customer.domain.consultation.service.summary.HttpCustomerAiConsultationSummaryClient;
+import com.chapchap.customer.domain.knowledge.service.processing.async.HttpCustomerAiKnowledgeJobClient;
+import com.chapchap.customer.domain.knowledge.service.processing.async.KnowledgeProcessingCallbackConsumer;
+import com.chapchap.customer.domain.knowledge.controller.processing.async.KnowledgeProcessingCallbackController;
+import com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticSink;
+import com.chapchap.customer.global.config.customerai.CustomerAiRuntimeActivationGate;
+import com.chapchap.customer.domain.customerai.service.observability.CustomerAiDiagnosticPublisher;
+import com.chapchap.customer.domain.customerai.service.observability.LoggingCustomerAiDiagnosticSink;
+import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
+import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
+import com.chapchap.customer.domain.csreadmodel.repository.CsReadModelRepository;
+import com.chapchap.customer.domain.faq.repository.FaqRepository;
+import com.chapchap.customer.domain.notification.repository.NotificationReadRepository;
+import com.chapchap.customer.domain.notification.repository.NotificationRepository;
+import com.chapchap.customer.domain.knowledge.repository.KnowledgeDocumentRepository;
+import com.chapchap.customer.domain.knowledge.repository.KnowledgeVersionRepository;
+import com.chapchap.customer.domain.quality.repository.QualityInquiryRepository;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest
+import java.security.Principal;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.mock;
+import static org.hamcrest.Matchers.containsString;
+
+@SpringBootTest(properties = {
+        "springdoc.api-docs.path=/api-docs",
+        "customer.storage.knowledge.access-key=test-access-key",
+        "customer.storage.knowledge.secret-key=test-secret-key",
+        "customer.storage.quality-inquiry.access-key=test-access-key",
+        "customer.storage.quality-inquiry.secret-key=test-secret-key"
+})
+@Import(ChapchapCustomerServiceApplicationTests.SecurityProbeConfiguration.class)
 class ChapchapCustomerServiceApplicationTests {
+    private static final String USER_ID_HEADER = "X-User-Id";
+    private static final String USER_ROLE_HEADER = "X-User-Role";
+
+    @Autowired
+    private WebApplicationContext webApplicationContext;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private com.chapchap.customer.global.security.context.CurrentAccountVerifier currentAccountVerifier;
+
+    private MockMvc mockMvc;
+
+    @Test
+    void rejectsChangedAccountBeforeControllerAccess() throws Exception {
+        org.mockito.Mockito.doThrow(new org.springframework.security.authentication.BadCredentialsException("changed"))
+                .when(currentAccountVerifier).verify(org.mockito.ArgumentMatchers.any());
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1").header(USER_ROLE_HEADER, "ADMIN"))
+                .andExpect(status().isUnauthorized());
+    }
+
+
+    @BeforeEach
+    void setUpMockMvc() {
+        mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext)
+                .apply(springSecurity())
+                .build();
+    }
 
     @Test
     void contextLoads() {
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiRuntimeActivationGate.class)).hasSize(1);
+    }
+    @Test
+    void keepsCustomerAiCandidateRuntimeComponentsUnregistered() {
+        assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiConsultationClient.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiKnowledgeJobClient.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(HttpCustomerAiConsultationSummaryClient.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(KnowledgeProcessingCallbackConsumer.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(ConsultationSummaryCallbackConsumer.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(ConsultationSummaryCallbackController.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(KnowledgeProcessingCallbackController.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(CurrentStateTrustedContextBoundary.class)).isEmpty();
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticSink.class))
+                .hasSize(1)
+                .allSatisfy((name, sink) -> assertThat(sink)
+                        .isInstanceOf(LoggingCustomerAiDiagnosticSink.class));
+        assertThat(webApplicationContext.getBeansOfType(CustomerAiDiagnosticPublisher.class)).hasSize(1);
+    }
+
+    @Test
+    void rejectsCustomerRequestWithoutTrustedUserHeaders() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsRequestWithOnlyOneTrustedUserHeader() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "customer-1"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsUnsupportedRole() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "customer-1")
+                        .header(USER_ROLE_HEADER, "UNKNOWN"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsBlankUserId() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, " ")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsNonNumericUserId() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "customer-1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsNonPositiveUserId() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "0")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "-1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsMultipleValuesForTrustedHeaders() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1", "2")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER", "ADMIN"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"CUSTOMER", "RIDER", "ADMIN", "SUPER_ADMIN"})
+    void acceptsEveryGatewayRole(String role) throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/authenticated")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, role))
+                .andExpect(status().isOk())
+                .andExpect(content().string("1"));
+    }
+
+    @Test
+    void rejectsNonAdminRoleFromAdminEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/admin")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void allowsAdminRoleToAdminEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/admin")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "ADMIN"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsSuperAdminRoleToAdminEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/security-probe/admin")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "SUPER_ADMIN"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void allowsAnonymousRequestToPublicFaqEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/faqs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("00"))
+                .andExpect(jsonPath("$.data").isArray());
+    }
+
+    @Test
+    void doesNotExposePrometheusEndpointThroughApplicationSecurity() throws Exception {
+        mockMvc.perform(get("/actuator/prometheus"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void doesNotAllowAnonymousWriteRequestOnPublicFaqPath() throws Exception {
+        mockMvc.perform(post("/api/customer/faqs"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsConsultationCreationWithoutTrustedUserHeaders() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"상담을 시작합니다.\"}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(jsonPath("$.code").value("E03"));
+    }
+
+    @Test
+    void rejectsAdminRoleFromConsultationCoreEndpoints() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "ADMIN")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"상담을 시작합니다.\"}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void rejectsAdminRoleFromUserAdminHandoffEndpoint() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations/1/admin-handoffs")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "ADMIN"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void rejectsCustomerRoleFromAdminConsultationEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/admin/consultations")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void rejectsCustomerRoleFromKnowledgeAdministrationEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/admin/knowledge/versions/1")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void separatesQualityInquiryUserAndAdministratorEndpoints() throws Exception {
+        mockMvc.perform(get("/api/customer/quality-inquiries")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value("00"));
+
+        mockMvc.perform(get("/api/customer/admin/quality-inquiries")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void rejectsCustomerRoleFromAuditLogEndpoint() throws Exception {
+        mockMvc.perform(get("/api/customer/admin/audit-logs")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.code").value("E04"));
+    }
+
+    @Test
+    void validatesBlankConsultationContentBeforeServiceCall() throws Exception {
+        mockMvc.perform(post("/api/customer/consultations")
+                        .header(USER_ID_HEADER, "1")
+                        .header(USER_ROLE_HEADER, "CUSTOMER")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"content\":\"   \"}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("E21"));
+    }
+
+    @Test
+    void publishesFaqApiInOpenApiDocument() throws Exception {
+        mockMvc.perform(get("/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/api/customer/faqs")))
+                .andExpect(content().string(containsString("/api/customer/consultations")))
+                .andExpect(content().string(containsString("/admin-handoffs")))
+                .andExpect(content().string(containsString("/api/customer/admin/consultations")))
+                .andExpect(content().string(containsString("/api/customer/admin/knowledge/versions")))
+                .andExpect(content().string(containsString("/api/customer/quality-inquiries")))
+                .andExpect(content().string(containsString("/api/customer/admin/quality-inquiries")))
+                .andExpect(content().string(containsString("/api/customer/admin/audit-logs")));
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    static class SecurityProbeConfiguration {
+        @Bean
+        SecurityProbeController securityProbeController() {
+            return new SecurityProbeController();
+        }
+
+        @Bean
+        FaqRepository faqRepository() {
+            return mock(FaqRepository.class);
+        }
+
+        @Bean
+        AuditLogRepository auditLogRepository() {
+            return mock(AuditLogRepository.class);
+        }
+
+        @Bean
+        ConsultationRepository consultationRepository() {
+            return mock(ConsultationRepository.class);
+        }
+
+        @Bean
+        ConsultationMessageRepository consultationMessageRepository() {
+            return mock(ConsultationMessageRepository.class);
+        }
+
+        @Bean
+        CsReadModelRepository csReadModelRepository() {
+            return mock(CsReadModelRepository.class);
+        }
+
+        @Bean
+        NotificationRepository notificationRepository() {
+            return mock(NotificationRepository.class);
+        }
+
+        @Bean
+        NotificationReadRepository notificationReadRepository() {
+            return mock(NotificationReadRepository.class);
+        }
+
+        @Bean
+        KnowledgeDocumentRepository knowledgeDocumentRepository() {
+            return mock(KnowledgeDocumentRepository.class);
+        }
+
+        @Bean
+        KnowledgeVersionRepository knowledgeVersionRepository() {
+            return mock(KnowledgeVersionRepository.class);
+        }
+
+        @Bean
+        QualityInquiryRepository qualityInquiryRepository() {
+            return mock(QualityInquiryRepository.class);
+        }
+    }
+
+    @RestController
+    @RequestMapping(value = "/api/customer/security-probe", produces = MediaType.TEXT_PLAIN_VALUE)
+    static class SecurityProbeController {
+        @GetMapping("/authenticated")
+        String authenticated(Principal principal) {
+            return principal.getName();
+        }
+
+        @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+        @GetMapping("/admin")
+        String admin() {
+            return "admin";
+        }
     }
 
 }

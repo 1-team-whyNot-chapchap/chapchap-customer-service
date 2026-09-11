@@ -1,0 +1,171 @@
+{
+  "contractStatus": "CANDIDATE",
+  "schemaVersion": "1.0",
+  "consultation": {
+    "request": {
+      "schemaVersion": "1.0",
+      "requestId": "11111111-1111-4111-8111-111111111111",
+      "consultationId": 501,
+      "triggerMessageId": 9002,
+      "subject": {
+        "userId": 42,
+        "role": "CUSTOMER",
+        "allowedAiScopes": ["customer-ai.policy.read"]
+      },
+      "message": "환불 정책을 확인합니다.",
+      "conversationContext": []
+    },
+    "answer": {
+      "schemaVersion": "1.0",
+      "requestId": "11111111-1111-4111-8111-111111111111",
+      "decision": "ANSWER",
+      "answer": "환불 정책의 적용 조건을 안내합니다.",
+      "route": "POLICY",
+      "degraded": false,
+      "handoffRequired": false,
+      "evidence": [
+        {
+          "knowledgeVersionId": 101,
+          "chunkId": "refund-policy-v1-0001",
+          "retrievalRank": 1,
+          "retrievalScore": 0.91
+        }
+      ]
+    },
+    "handoff": {
+      "schemaVersion": "1.0",
+      "requestId": "11111111-1111-4111-8111-111111111111",
+      "decision": "HANDOFF",
+      "route": "USER_STATE",
+      "degraded": false,
+      "handoffRequired": true,
+      "evidence": []
+    },
+    "degraded": {
+      "schemaVersion": "1.0",
+      "requestId": "11111111-1111-4111-8111-111111111111",
+      "decision": "DEGRADED",
+      "answer": "확인된 정책만 안내하며 현재 상태는 관리자 확인이 필요합니다.",
+      "route": "POLICY_AND_STATE",
+      "degraded": true,
+      "handoffRequired": true,
+      "evidence": [
+        {
+          "knowledgeVersionId": 101,
+          "chunkId": "refund-policy-v1-0001",
+          "retrievalRank": 1,
+          "retrievalScore": 0.91
+        }
+      ]
+    }
+  },
+  "knowledge": {
+    "request": {
+      "schemaVersion": "1.0",
+      "knowledgeVersionId": 101,
+      "attempt": 1,
+      "source": {
+        "downloadUrl": "https://minio.internal/knowledge.txt",
+        "contentType": "text/plain",
+        "fileSize": 4
+      },
+      "metadata": {
+        "documentKey": "refund-policy",
+        "sourceService": "subscription-service",
+        "category": "REFUND",
+        "version": "2026.09",
+        "effectiveFrom": "2026-09-01T00:00:00+09:00"
+      },
+      "chunkProfile": "HYBRID_POLICY_V1",
+      "callback": {
+        "resultUri": "/internal/v1/knowledge-processing-results"
+      }
+    },
+    "accepted": {
+      "schemaVersion": "1.0",
+      "processingId": 8001,
+      "knowledgeVersionId": 101,
+      "status": "ACCEPTED"
+    },
+    "completed": {
+      "schemaVersion": "1.0",
+      "processingId": 8001,
+      "knowledgeVersionId": 101,
+      "status": "COMPLETED",
+      "chunkCount": 3,
+      "chunkProfile": "HYBRID_POLICY_V1"
+    },
+    "failed": {
+      "schemaVersion": "1.0",
+      "processingId": 8001,
+      "knowledgeVersionId": 101,
+      "status": "FAILED",
+      "failureCode": "EMBEDDING_UNAVAILABLE",
+      "retryable": true
+    }
+  },
+  "summary": {
+    "request": {
+      "schemaVersion": "1.0",
+      "summaryJobId": 7001,
+      "consultationId": 501,
+      "messages": [
+        {"senderType": "USER", "content": "환불 정책을 문의했습니다."},
+        {"senderType": "ADMIN", "content": "정책 근거를 안내했습니다."}
+      ],
+      "callback": {
+        "resultUri": "/internal/v1/consultation-summary-results"
+      }
+    },
+    "accepted": {
+      "schemaVersion": "1.0",
+      "summaryJobId": 7001,
+      "consultationId": 501,
+      "status": "ACCEPTED"
+    },
+    "completed": {
+      "schemaVersion": "1.0",
+      "summaryJobId": 7001,
+      "consultationId": 501,
+      "status": "COMPLETED",
+      "summary": "사용자가 환불 정책을 문의했고 관리자가 정책 근거를 안내했습니다."
+    },
+    "failed": {
+      "schemaVersion": "1.0",
+      "summaryJobId": 7001,
+      "consultationId": 501,
+      "status": "FAILED",
+      "failureCode": "LLM_UNAVAILABLE",
+      "retryable": true
+    }
+  },
+  "currentState": {
+    "payment": {
+      "availability": "AVAILABLE",
+      "status": "RETRY_WAITING",
+      "paymentType": "REGULAR_PAYMENT",
+      "amount": 12900,
+      "occurredAt": "2026-08-31T09:00:00+09:00"
+    },
+    "refund": {
+      "availability": "AVAILABLE",
+      "status": "REVIEW_REQUIRED",
+      "refundType": "DELIVERY_PARTIAL_CANCELLATION",
+      "requestedAmount": 20000,
+      "refundedAmount": 12000,
+      "unprocessedAmount": 8000,
+      "requestedAt": "2026-08-31T13:55:00+09:00",
+      "completedAt": null
+    },
+    "subscription": {
+      "availability": "AVAILABLE",
+      "status": "CANCELLATION_SCHEDULED"
+    },
+    "delivery": {
+      "availability": "AVAILABLE",
+      "status": "DELIVERING",
+      "delayStatus": "UNKNOWN",
+      "statusChangedAt": null
+    }
+  }
+}

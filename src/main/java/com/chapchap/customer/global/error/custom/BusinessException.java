@@ -1,6 +1,6 @@
 package com.chapchap.customer.global.error.custom;
 
-import com.chapchap.auth.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import lombok.Getter;
 
 @Getter

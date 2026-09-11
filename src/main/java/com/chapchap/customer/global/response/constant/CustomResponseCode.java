@@ -18,11 +18,6 @@ public enum CustomResponseCode {
     // 유효성 검사 관련
     INVALID_STATE_ERROR(HttpStatus.CONFLICT, "E20"),
     INVALID_PARAMETER_ERROR(HttpStatus.BAD_REQUEST, "E21"),
-    // OAuth2 관련
-    OAUTH2_ERROR(HttpStatus.CONFLICT, "E30"),
-    UNSUPPORTED_PROVIDER_ERROR(HttpStatus.CONFLICT, "E31"),
-    // File 관련
-    FILE_MANAGED_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "E40"),
     // Not Found 관련
     NOT_FOUND_ERROR(HttpStatus.NOT_FOUND, "E50"),
     // DB 관련

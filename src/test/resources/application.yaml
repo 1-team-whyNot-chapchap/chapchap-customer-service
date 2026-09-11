@@ -1,0 +1,55 @@
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.jdbc.autoconfigure.DataSourceAutoConfiguration
+      - org.springframework.boot.hibernate.autoconfigure.HibernateJpaAutoConfiguration
+      - org.springframework.boot.security.autoconfigure.UserDetailsServiceAutoConfiguration
+  kafka:
+    listener:
+      auto-startup: false
+
+customer:
+  storage:
+    knowledge:
+      endpoint: http://localhost:9000
+      access-key: test-access-key
+      secret-key: test-secret-key
+      bucket: customer-knowledge-test
+      presigned-get-url-expiry-seconds: 300
+  knowledge:
+    activation-scheduler:
+      enabled: false
+  ai:
+    internal-auth:
+      enabled: false
+    callback-auth:
+      enabled: false
+    knowledge-processing:
+      async-enabled: false
+      base-url: http://localhost:8085
+      connect-timeout-milliseconds: 1000
+      read-timeout-milliseconds: 10000
+    consultation-response:
+      async-enabled: false
+      base-url: http://localhost:8085
+      connect-timeout-milliseconds: 1000
+      read-timeout-milliseconds: 10000
+    consultation-summary:
+      async-enabled: false
+  kafka:
+    topics:
+      payment: msa4-team1.subscription.payment-events.v1
+      refund: msa4-team1.subscription.refund-events.v1
+      subscription-notification: msa4-team1.subscription.customer-notification-events.v1
+      subscription: msa4-team1.subscription.subscription-events.v1
+      delivery-address: msa4-team1.subscription.delivery-address-events.v1
+      delivery: msa4-team1.delivery.delivery-events.v1
+      delivery-operation-notification: msa4-team1.delivery.operation-notification-requests.v1
+    groups:
+      payment: customer-service-payment-group
+      refund: customer-service-refund-group
+      subscription-notification: customer-service-subscription-notification-group
+      subscription: customer-service-subscription-group
+      delivery-address: customer-service-delivery-address-group
+      delivery: customer-service-delivery-group
+      delivery-operation-notification: customer-service-delivery-operation-notification-group

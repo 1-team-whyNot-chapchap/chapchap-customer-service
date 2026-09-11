@@ -1,7 +1,7 @@
 package com.chapchap.customer.global.config.openapi;
 
 
-import com.chapchap.auth.global.response.constant.CustomResponseCode;
+import com.chapchap.customer.global.response.constant.CustomResponseCode;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
 import java.lang.annotation.ElementType;
