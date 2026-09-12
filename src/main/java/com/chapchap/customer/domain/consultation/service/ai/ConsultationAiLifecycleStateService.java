@@ -89,7 +89,7 @@ public class ConsultationAiLifecycleStateService {
         CustomerAiSubjectAssertionRequest subject = new CustomerAiSubjectAssertionRequest(
                 event.userId(),
                 event.role(),
-                List.of(CustomerAiSubjectScope.POLICY_READ.value()),
+                ConsultationReadScopes.forMessage(event.role(), trigger.getContent()),
                 requestId,
                 event.consultationId()
         );
@@ -114,9 +114,11 @@ public class ConsultationAiLifecycleStateService {
         if (!command.requestId().equals(result.requestId())) {
             throw new ConsultationStateException("Customer-AI 응답 requestId가 요청과 일치하지 않습니다.");
         }
-        if (result.route() == CustomerAiConsultationResult.Route.USER_STATE
-                || result.route() == CustomerAiConsultationResult.Route.POLICY_AND_STATE) {
-            throw new ConsultationStateException("Current-State 경로는 아직 활성화되지 않았습니다.");
+        if ((result.route() == CustomerAiConsultationResult.Route.USER_STATE
+                || result.route() == CustomerAiConsultationResult.Route.POLICY_AND_STATE)
+                && command.subject().allowedAiScopes().stream()
+                .noneMatch(scope -> !CustomerAiSubjectScope.POLICY_READ.value().equals(scope))) {
+            throw new ConsultationStateException("Current-State 조회 권한이 없는 요청입니다.");
         }
         Consultation consultation = consultationRepository.findByIdForMessageWrite(command.consultationId())
                 .orElseThrow(ConsultationNotFoundException::new);
