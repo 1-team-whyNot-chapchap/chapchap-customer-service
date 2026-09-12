@@ -64,8 +64,9 @@ public class ConsultationAiResponseOrchestrator {
             return;
         }
 
-        CustomerAiConsultationCommand command = prepared.command();
+        CustomerAiConsultationCommand original = prepared.command();
         try {
+            CustomerAiConsultationCommand command = customerAiClient.prepare(original);
             CustomerAiConsultationResult result = customerAiClient.respond(command);
             if (stateService.apply(command, result, LocalDateTime.now(KST_CLOCK))) {
                 diagnosticPublisher().publish(traceId -> CustomerAiDiagnosticEvent.consultationLifecycleApplied(
@@ -77,11 +78,11 @@ public class ConsultationAiResponseOrchestrator {
                 ));
             }
         } catch (CustomerAiConsultationClientException exception) {
-            fallback(command, CustomerAiDiagnosticFailureCode.from(exception.reason()));
+            fallback(original, CustomerAiDiagnosticFailureCode.from(exception.reason()));
         } catch (CustomerAiAuthenticationUnavailableException exception) {
-            fallback(command, CustomerAiDiagnosticFailureCode.AUTHENTICATION_UNAVAILABLE);
+            fallback(original, CustomerAiDiagnosticFailureCode.AUTHENTICATION_UNAVAILABLE);
         } catch (RuntimeException exception) {
-            fallback(command, CustomerAiDiagnosticFailureCode.STATE_CONFLICT);
+            fallback(original, CustomerAiDiagnosticFailureCode.STATE_CONFLICT);
         }
     }
 

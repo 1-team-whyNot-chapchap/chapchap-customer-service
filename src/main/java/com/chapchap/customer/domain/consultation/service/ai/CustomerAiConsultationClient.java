@@ -6,4 +6,7 @@ import com.chapchap.customer.domain.consultation.dto.ai.CustomerAiConsultationRe
 @FunctionalInterface
 public interface CustomerAiConsultationClient {
     CustomerAiConsultationResult respond(CustomerAiConsultationCommand command);
+    default CustomerAiConsultationCommand prepare(CustomerAiConsultationCommand command) {
+        return command;
+    }
 }

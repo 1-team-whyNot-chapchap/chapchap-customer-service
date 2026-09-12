@@ -39,6 +39,7 @@ class ConsultationAiResponseOrchestratorTest {
 
     @BeforeEach
     void setUp() {
+        org.mockito.Mockito.lenient().when(client.prepare(any())).thenAnswer(call -> call.getArgument(0));
         orchestrator = new ConsultationAiResponseOrchestrator(
                 stateService, client, scheduler, Optional.of(diagnostics));
     }

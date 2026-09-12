@@ -47,6 +47,8 @@ import java.util.UUID;
 )
 public class ConsultationAiLifecycleStateService {
     private static final int MAX_CONTEXT_MESSAGES = 20;
+    @org.springframework.beans.factory.annotation.Value("${customer.ai.consultation-response.boundaries-enabled:false}")
+    private boolean boundariesEnabled;
 
     private final ConsultationRepository consultationRepository;
     private final ConsultationMessageRepository messageRepository;
@@ -83,7 +85,9 @@ public class ConsultationAiLifecycleStateService {
         int contextStart = Math.max(0, triggerIndex - MAX_CONTEXT_MESSAGES);
         List<String> context = messages.subList(contextStart, triggerIndex)
                 .stream()
-                .map(ConsultationMessage::getContent)
+                .map(message -> boundariesEnabled ? new tools.jackson.databind.ObjectMapper().writeValueAsString(
+                        Map.of("sender", message.getSenderType().name(), "sequence", message.getSequenceNo(),
+                                "content", message.getContent())) : message.getContent())
                 .toList();
 
         CustomerAiSubjectAssertionRequest subject = new CustomerAiSubjectAssertionRequest(
