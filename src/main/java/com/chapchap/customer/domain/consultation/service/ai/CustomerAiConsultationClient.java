@@ -9,4 +9,5 @@ public interface CustomerAiConsultationClient {
     default CustomerAiConsultationCommand prepare(CustomerAiConsultationCommand command) {
         return command;
     }
+    default boolean usesBoundaries() { return false; }
 }

@@ -38,6 +38,8 @@ public final class HttpCustomerAiConsultationClient implements CustomerAiConsult
         this.boundariesEnabled = enabled;
         return this;
     }
+    @Override
+    public boolean usesBoundaries() { return boundariesEnabled; }
 
     @Override
     public CustomerAiConsultationCommand prepare(CustomerAiConsultationCommand command) {

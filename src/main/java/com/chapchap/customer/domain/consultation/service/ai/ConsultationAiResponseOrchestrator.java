@@ -78,6 +78,16 @@ public class ConsultationAiResponseOrchestrator {
                 ));
             }
         } catch (CustomerAiConsultationClientException exception) {
+            if (customerAiClient.usesBoundaries()
+                    && (exception.reason() == CustomerAiConsultationClientException.Reason.DEPENDENCY_UNAVAILABLE
+                    || exception.reason() == CustomerAiConsultationClientException.Reason.TIMEOUT)) {
+                stateService.apply(original, new CustomerAiConsultationResult(original.requestId(),
+                        CustomerAiConsultationResult.Decision.DEGRADED,
+                        "지금은 상담 정보를 확인할 수 없어요. 잠시 후 다시 질문해 주세요. 상담사 연결도 이용할 수 있어요.",
+                        CustomerAiConsultationResult.Route.UNSUPPORTED, true, false, java.util.List.of()),
+                        LocalDateTime.now(KST_CLOCK));
+                return;
+            }
             fallback(original, CustomerAiDiagnosticFailureCode.from(exception.reason()));
         } catch (CustomerAiAuthenticationUnavailableException exception) {
             fallback(original, CustomerAiDiagnosticFailureCode.AUTHENTICATION_UNAVAILABLE);

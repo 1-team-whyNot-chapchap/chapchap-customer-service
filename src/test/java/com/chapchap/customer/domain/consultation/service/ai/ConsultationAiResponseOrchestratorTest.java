@@ -26,6 +26,18 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ConsultationAiResponseOrchestratorTest {
+    @Test
+    void transientBoundaryFailureDoesNotForceHandoff() {
+        var command = command();
+        when(stateService.prepare(any(), any())).thenReturn(Optional.of(new PreparedConsultationAiRequest(command)));
+        when(client.usesBoundaries()).thenReturn(true);
+        when(client.prepare(command)).thenThrow(new CustomerAiConsultationClientException(
+                CustomerAiConsultationClientException.Reason.DEPENDENCY_UNAVAILABLE));
+        orchestrator.respond(event());
+        verify(stateService).apply(org.mockito.ArgumentMatchers.eq(command),
+                org.mockito.ArgumentMatchers.argThat(result -> result.degraded() && !result.handoffRequired()), any());
+        org.mockito.Mockito.verify(stateService, org.mockito.Mockito.never()).handoffAfterFailure(any(), any(), any());
+    }
     @Mock
     private ConsultationAiLifecycleStateService stateService;
     @Mock
