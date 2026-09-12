@@ -357,6 +357,16 @@ class ChapchapCustomerServiceApplicationTests {
         }
 
         @Bean
+        com.chapchap.customer.domain.consultation.repository.summary.ConsultationSummaryRepository consultationSummaryRepository() {
+            return mock(com.chapchap.customer.domain.consultation.repository.summary.ConsultationSummaryRepository.class);
+        }
+
+        @Bean
+        com.chapchap.customer.domain.consultation.repository.summary.ConsultationSummaryJobRepository consultationSummaryJobRepository() {
+            return mock(com.chapchap.customer.domain.consultation.repository.summary.ConsultationSummaryJobRepository.class);
+        }
+
+        @Bean
         ConsultationRepository consultationRepository() {
             return mock(ConsultationRepository.class);
         }

@@ -9,6 +9,7 @@ import com.chapchap.customer.domain.consultation.response.summary.CustomerAiCons
 
 import com.chapchap.customer.domain.consultation.entity.Consultation;
 import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
+import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
 import com.chapchap.customer.global.exception.consultation.ConsultationNotFoundException;
@@ -37,12 +38,13 @@ public class ConsultationSummaryStateService {
     @Transactional
     public Optional<PreparedConsultationSummaryJob> prepare(
             Long consultationId,
+            int lastMessageSequenceNo,
             LocalDateTime now
     ) {
         Consultation consultation = consultationRepository.findByIdForMessageWrite(consultationId)
                 .orElseThrow(ConsultationNotFoundException::new);
-        if (consultation.getStatus() != ConsultationStatus.CLOSED) {
-            throw new ConsultationStateException("종료된 상담만 요약할 수 있습니다.");
+        if (consultation.getStatus() == ConsultationStatus.AI_HANDLING) {
+            throw new ConsultationStateException("상담사에게 전환된 상담만 요약할 수 있습니다.");
         }
         if (jobRepository.findByConsultationId(consultationId).isPresent()) {
             return Optional.empty();
@@ -50,6 +52,9 @@ public class ConsultationSummaryStateService {
 
         var messages = messageRepository.findByConsultation_IdOrderBySequenceNoAsc(consultationId)
                 .stream()
+                .filter(message -> message.getSequenceNo() <= lastMessageSequenceNo)
+                .filter(message -> message.getSenderType() == ConsultationSenderType.USER
+                        || message.getSenderType() == ConsultationSenderType.AI)
                 .map(message -> new CustomerAiConsultationSummaryCommand.Message(
                         CustomerAiConsultationSummaryCommand.SenderType.valueOf(
                                 message.getSenderType().name()),

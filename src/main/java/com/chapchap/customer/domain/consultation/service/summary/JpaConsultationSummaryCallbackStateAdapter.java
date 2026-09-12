@@ -65,7 +65,7 @@ public class JpaConsultationSummaryCallbackStateAdapter implements ConsultationS
 
         Consultation consultation = consultationRepository.findByIdForMessageWrite(job.getConsultationId())
                 .orElseThrow(ConsultationNotFoundException::new);
-        if (consultation.getStatus() != ConsultationStatus.CLOSED) {
+        if (consultation.getStatus() == ConsultationStatus.AI_HANDLING) {
             return ConsultationSummaryCallbackOutcome.CONFLICT;
         }
         ConsultationSummaryJobSnapshot snapshot = new ConsultationSummaryJobSnapshot(

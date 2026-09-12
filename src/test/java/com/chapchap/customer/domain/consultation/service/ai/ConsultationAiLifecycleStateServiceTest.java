@@ -154,6 +154,7 @@ class ConsultationAiLifecycleStateServiceTest {
         verify(messageRepository, never()).save(any());
         verify(auditLogWriter).recordConsultationAiEscalated(
                 eq(consultation), eq("AI_HANDLING"), eq("HANDOFF"), eq(NOW));
+        verify(eventPublisher).publishEvent(new com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent(501L, 0));
     }
 
     @Test
@@ -187,6 +188,7 @@ class ConsultationAiLifecycleStateServiceTest {
         assertThat(consultation.getStatus()).isEqualTo(ConsultationStatus.WAITING_ADMIN);
         verify(auditLogWriter).recordConsultationAiEscalated(
                 eq(consultation), eq("AI_HANDLING"), eq("TIMEOUT"), eq(NOW));
+        verify(eventPublisher).publishEvent(new com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent(501L, 0));
     }
 
     @Test

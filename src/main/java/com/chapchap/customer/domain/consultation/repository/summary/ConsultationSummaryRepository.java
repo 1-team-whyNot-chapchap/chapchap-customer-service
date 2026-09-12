@@ -11,6 +11,8 @@ import org.springframework.data.repository.query.Param;
 import java.util.Optional;
 
 public interface ConsultationSummaryRepository extends JpaRepository<ConsultationSummary, Long> {
+    Optional<ConsultationSummary> findByConsultationId(Long consultationId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select summary from ConsultationSummary summary where summary.consultationId = :consultationId")
     Optional<ConsultationSummary> findByConsultationIdForUpdate(@Param("consultationId") Long consultationId);

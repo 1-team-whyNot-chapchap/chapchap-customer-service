@@ -12,6 +12,7 @@ import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType
 import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationAiResponseRequestedEvent;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageSourceRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
@@ -219,6 +220,9 @@ public class ConsultationAiLifecycleStateService {
         String beforeStatus = consultation.getStatus().name();
         if (consultation.requestAdminHandoff(now)) {
             auditLogWriter.recordConsultationAiEscalated(consultation, beforeStatus, reason, now);
+            int cutoff = messageRepository.findTopByConsultation_IdOrderBySequenceNoDesc(consultation.getId())
+                    .map(ConsultationMessage::getSequenceNo).orElse(0);
+            eventPublisher.publishEvent(new ConsultationHandedOffEvent(consultation.getId(), cutoff));
         }
     }
 

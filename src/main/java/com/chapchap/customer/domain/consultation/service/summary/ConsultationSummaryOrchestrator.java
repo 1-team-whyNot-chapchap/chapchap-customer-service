@@ -29,16 +29,16 @@ public class ConsultationSummaryOrchestrator {
     private final CustomerAiConsultationSummaryClient customerAiClient;
     private final TaskScheduler knowledgeProcessingTaskScheduler;
 
-    public void queue(Long consultationId) {
+    public void queue(Long consultationId, int lastMessageSequenceNo) {
         knowledgeProcessingTaskScheduler.schedule(
-                () -> submit(consultationId),
+                () -> submit(consultationId, lastMessageSequenceNo),
                 Instant.now(KST_CLOCK)
         );
     }
 
-    void submit(Long consultationId) {
+    void submit(Long consultationId, int lastMessageSequenceNo) {
         PreparedConsultationSummaryJob prepared = stateService
-                .prepare(consultationId, LocalDateTime.now(KST_CLOCK))
+                .prepare(consultationId, lastMessageSequenceNo, LocalDateTime.now(KST_CLOCK))
                 .orElse(null);
         if (prepared == null) {
             return;
@@ -49,7 +49,7 @@ public class ConsultationSummaryOrchestrator {
         try {
             CustomerAiConsultationSummaryCommand command = new CustomerAiConsultationSummaryCommand(
                     prepared.requestId(), prepared.summaryJobId(), prepared.consultationId(),
-                    com.chapchap.customer.domain.consultation.constant.ConsultationStatus.CLOSED,
+                    com.chapchap.customer.domain.consultation.constant.ConsultationStatus.WAITING_ADMIN,
                     prepared.messages()
             );
             CustomerAiConsultationSummaryAccepted accepted = customerAiClient.submit(command);

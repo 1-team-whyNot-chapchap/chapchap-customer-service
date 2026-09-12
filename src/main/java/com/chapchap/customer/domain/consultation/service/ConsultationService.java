@@ -7,6 +7,7 @@ import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationMessageSavedEvent;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationAiResponseRequestedEvent;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationClosedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent;
 import com.chapchap.customer.domain.consultation.request.ConsultationRealtimeMessageRequest;
 import com.chapchap.customer.domain.consultation.response.AdminConsultationResponse;
 import com.chapchap.customer.domain.audit.service.AuditLogWriter;
@@ -107,10 +108,15 @@ public class ConsultationService {
 
     @Transactional
     public ConsultationResponse requestAdminHandoff(Long userId, Long consultationId) {
-        Consultation consultation = findMyConsultationEntity(userId, consultationId);
+        Consultation consultation = consultationRepository.findByIdForMessageWrite(consultationId)
+                .filter(value -> value.getUserId().equals(userId))
+                .orElseThrow(ConsultationNotFoundException::new);
         String beforeStatus = consultation.getStatus().name();
-        if (consultation.requestAdminHandoff(LocalDateTime.now())) {
+        if (consultation.requestAdminHandoff(LocalDateTime.now(KST_CLOCK))) {
             auditLogWriter.recordConsultationEscalated(userId, consultation, beforeStatus, consultation.getUpdatedAt());
+            int cutoff = consultationMessageRepository.findTopByConsultation_IdOrderBySequenceNoDesc(consultationId)
+                    .map(ConsultationMessage::getSequenceNo).orElse(0);
+            applicationEventPublisher.publishEvent(new ConsultationHandedOffEvent(consultationId, cutoff));
         }
         return ConsultationResponse.from(consultation);
     }

@@ -56,6 +56,20 @@ class ConsultationServiceTest {
     private ConsultationService consultationService;
 
     @Test
+    void manualHandoffPublishesSnapshotOnlyOnceAndRejectsOtherOwner() {
+        Consultation consultation = consultation(3L, 7L);
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
+        ConsultationMessage last = ConsultationMessage.create(consultation,
+                com.chapchap.customer.domain.consultation.constant.ConsultationSenderType.USER, 7L, "상담사 연결", 4, LocalDateTime.now());
+        when(consultationMessageRepository.findTopByConsultation_IdOrderBySequenceNoDesc(3L)).thenReturn(Optional.of(last));
+        consultationService.requestAdminHandoff(7L, 3L);
+        consultationService.requestAdminHandoff(7L, 3L);
+        verify(applicationEventPublisher).publishEvent(
+                new com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent(3L, 4));
+        assertThatThrownBy(() -> consultationService.requestAdminHandoff(8L, 3L)).isInstanceOf(BusinessException.class);
+    }
+
+    @Test
     void createsAiHandlingConsultationAndFirstUserMessageTogether() {
         when(consultationRepository.save(any(Consultation.class))).thenAnswer(invocation -> {
             Consultation consultation = invocation.getArgument(0);
@@ -124,7 +138,7 @@ class ConsultationServiceTest {
     @Test
     void transfersOnlyOwnedAiHandlingConsultationToWaitingAdminAndRecordsAudit() {
         Consultation consultation = consultation(3L, 7L);
-        when(consultationRepository.findByIdAndUserId(3L, 7L)).thenReturn(Optional.of(consultation));
+        when(consultationRepository.findByIdForMessageWrite(3L)).thenReturn(Optional.of(consultation));
 
         var response = consultationService.requestAdminHandoff(7L, 3L);
 

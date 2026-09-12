@@ -18,8 +18,8 @@ class CustomerAiConsultationSummaryCommandTest {
     }
 
     @Test
-    void requiresConsultationToBeClosedBeforeSubmission() {
-        assertThatThrownBy(() -> command(ConsultationStatus.IN_PROGRESS, messages()))
+    void rejectsConsultationStillHandledByAi() {
+        assertThatThrownBy(() -> command(ConsultationStatus.AI_HANDLING, messages()))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("CLOSED");
     }
