@@ -42,17 +42,17 @@ class ConsultationSummaryOrchestratorTest {
     }
 
     @Test
-    void submitsClosedConsultationMessagesAndStoresAcceptedIdentity() {
+    void submitsHandoffConsultationMessagesAndStoresAcceptedIdentity() {
         PreparedConsultationSummaryJob prepared = prepared();
-        when(stateService.prepare(eq(501L), any())).thenReturn(Optional.of(prepared));
+        when(stateService.prepare(eq(501L), eq(2), any())).thenReturn(Optional.of(prepared));
         when(client.submit(any())).thenReturn(new CustomerAiConsultationSummaryAccepted(7001L, 501L));
 
-        orchestrator.submit(501L);
+        orchestrator.submit(501L, 2);
 
         ArgumentCaptor<CustomerAiConsultationSummaryCommand> command =
                 ArgumentCaptor.forClass(CustomerAiConsultationSummaryCommand.class);
         verify(client).submit(command.capture());
-        assertThat(command.getValue().consultationStatus().name()).isEqualTo("CLOSED");
+        assertThat(command.getValue().consultationStatus().name()).isEqualTo("WAITING_ADMIN");
         assertThat(command.getValue().messages()).hasSize(2);
         verify(stateService).markSubmitted(eq(7001L), any(LocalDateTime.class));
         verify(stateService).markAccepted(eq(prepared), any(), any(LocalDateTime.class));
@@ -64,9 +64,9 @@ class ConsultationSummaryOrchestratorTest {
         PreparedConsultationSummaryJob oversized = new PreparedConsultationSummaryJob(
                 original.requestId(), original.summaryJobId(), original.consultationId(),
                 java.util.Collections.nCopies(501, original.messages().getFirst()));
-        when(stateService.prepare(eq(501L), any())).thenReturn(Optional.of(oversized));
+        when(stateService.prepare(eq(501L), eq(2), any())).thenReturn(Optional.of(oversized));
 
-        orchestrator.submit(501L);
+        orchestrator.submit(501L, 2);
 
         verifyNoInteractions(client);
         verify(stateService).markSubmissionFailed(eq(7001L),
@@ -76,11 +76,11 @@ class ConsultationSummaryOrchestratorTest {
 
     @Test
     void recordsRetryableTimeoutWithoutReopeningConsultation() {
-        when(stateService.prepare(eq(501L), any())).thenReturn(Optional.of(prepared()));
+        when(stateService.prepare(eq(501L), eq(2), any())).thenReturn(Optional.of(prepared()));
         when(client.submit(any())).thenThrow(new CustomerAiConsultationSummaryClientException(
                 CustomerAiConsultationSummaryClientException.Reason.TIMEOUT));
 
-        orchestrator.submit(501L);
+        orchestrator.submit(501L, 2);
 
         verify(stateService).markSubmissionFailed(
                 eq(7001L),

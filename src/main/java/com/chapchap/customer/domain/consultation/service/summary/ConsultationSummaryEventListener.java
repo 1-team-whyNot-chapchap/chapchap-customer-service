@@ -1,6 +1,6 @@
 package com.chapchap.customer.domain.consultation.service.summary;
 
-import com.chapchap.customer.domain.consultation.dto.event.ConsultationClosedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -18,7 +18,7 @@ public class ConsultationSummaryEventListener {
     private final ConsultationSummaryOrchestrator orchestrator;
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    public void startSummary(ConsultationClosedEvent event) {
-        orchestrator.queue(event.consultationId());
+    public void startSummary(ConsultationHandedOffEvent event) {
+        orchestrator.queue(event.consultationId(), event.lastMessageSequenceNo());
     }
 }
