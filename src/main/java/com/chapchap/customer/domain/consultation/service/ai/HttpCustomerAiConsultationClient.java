@@ -32,6 +32,41 @@ public final class HttpCustomerAiConsultationClient implements CustomerAiConsult
     private final CustomerAiRequestCredentialsProvider credentialsProvider;
     private final CustomerAiConsultationResponseParser responseParser;
     private final CustomerAiDiagnosticPublisher diagnostics;
+    private boolean boundariesEnabled;
+
+    public HttpCustomerAiConsultationClient withBoundaries(boolean enabled) {
+        this.boundariesEnabled = enabled;
+        return this;
+    }
+    @Override
+    public boolean usesBoundaries() { return boundariesEnabled; }
+
+    @Override
+    public CustomerAiConsultationCommand prepare(CustomerAiConsultationCommand command) {
+        if (!boundariesEnabled) return command;
+        var subject = new com.chapchap.customer.domain.customerai.request.security.CustomerAiSubjectAssertionRequest(
+                command.subject().userId(), command.subject().role(),
+                java.util.List.of("customer-ai.policy.read"), command.requestId(), command.consultationId());
+        var initial = new CustomerAiConsultationCommand(command.requestId(), command.consultationId(),
+                command.triggerMessageId(), subject, command.message(), command.conversationContext(),
+                command.knowledgeVersionIds());
+        var credentials = credentialsProvider.create(subject);
+        try {
+            String body = restClient.post().uri("/internal/v1/consultation-interpretations")
+                    .header(HttpHeaders.AUTHORIZATION, credentials.authorization())
+                    .header(SUBJECT_ASSERTION_HEADER, credentials.subjectAssertion())
+                    .header(REQUEST_ID_HEADER, command.requestId().toString())
+                    .contentType(MediaType.APPLICATION_JSON).body(CustomerAiConsultationRequest.from(initial))
+                    .retrieve().body(String.class);
+            return ConsultationPlanParser.parse(body, initial);
+        } catch (RestClientResponseException error) {
+            throw classify(error.getStatusCode().value());
+        } catch (RestClientException error) {
+            throw new CustomerAiConsultationClientException(isTimeout(error)
+                    ? CustomerAiConsultationClientException.Reason.TIMEOUT
+                    : CustomerAiConsultationClientException.Reason.DEPENDENCY_UNAVAILABLE);
+        }
+    }
 
     public HttpCustomerAiConsultationClient(
             RestClient restClient,
@@ -82,13 +117,14 @@ public final class HttpCustomerAiConsultationClient implements CustomerAiConsult
 
         try {
             responseBody = restClient.post()
-                    .uri(PATH)
+                    .uri(command.planId() == null ? PATH : "/internal/v1/consultation-plan-responses")
                     .header(HttpHeaders.AUTHORIZATION, credentials.authorization())
                     .header(SUBJECT_ASSERTION_HEADER, credentials.subjectAssertion())
                     .header(REQUEST_ID_HEADER, command.requestId().toString())
                     .header(IDEMPOTENCY_KEY_HEADER, idempotencyKey(command))
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(request)
+                    .body(command.planId() == null ? request : java.util.Map.of(
+                            "planId", command.planId(), "request", request))
                     .retrieve()
                     .body(String.class);
         } catch (RestClientResponseException exception) {

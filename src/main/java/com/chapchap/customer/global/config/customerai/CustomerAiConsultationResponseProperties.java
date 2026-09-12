@@ -5,6 +5,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "customer.ai.consultation-response")
 public class CustomerAiConsultationResponseProperties {
     private boolean asyncEnabled;
+    private boolean boundariesEnabled;
+
+    public boolean isBoundariesEnabled() { return boundariesEnabled; }
+    public void setBoundariesEnabled(boolean value) { boundariesEnabled = value; }
     private String baseUrl = "http://localhost:8085";
     private int connectTimeoutMilliseconds = 1_000;
     private int readTimeoutMilliseconds = 10_000;

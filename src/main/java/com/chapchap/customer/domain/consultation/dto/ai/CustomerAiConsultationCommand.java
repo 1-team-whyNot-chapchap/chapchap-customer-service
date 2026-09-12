@@ -14,8 +14,14 @@ public record CustomerAiConsultationCommand(
         CustomerAiSubjectAssertionRequest subject,
         String message,
         List<String> conversationContext,
-        List<Long> knowledgeVersionIds
+        List<Long> knowledgeVersionIds,
+        UUID planId
 ) {
+    public CustomerAiConsultationCommand(UUID requestId, long consultationId, long triggerMessageId,
+            CustomerAiSubjectAssertionRequest subject, String message, List<String> context,
+            List<Long> versions) {
+        this(requestId, consultationId, triggerMessageId, subject, message, context, versions, null);
+    }
     private static final int MAX_MESSAGE_LENGTH = 10_000;
     private static final int MAX_CONTEXT_MESSAGES = 20;
 

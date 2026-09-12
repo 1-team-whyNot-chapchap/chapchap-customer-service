@@ -49,7 +49,7 @@ public class CustomerAiConsultationResponseRuntimeConfiguration {
                 credentialsProvider,
                 new CustomerAiConsultationResponseParser(objectMapper),
                 diagnostics.getIfAvailable(CustomerAiDiagnosticPublisher::noOp)
-        );
+        ).withBoundaries(properties.isBoundariesEnabled());
     }
 
     private void validateHttpsOrigin(String value) {
