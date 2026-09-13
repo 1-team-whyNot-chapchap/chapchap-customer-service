@@ -54,13 +54,14 @@ public class NotificationController {
     }
 
     @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    @PreAuthorize("hasRole('CUSTOMER')")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'RIDER', 'ADMIN')")
     public SseEmitter connectCustomerStream(@AuthenticationPrincipal GatewayUserPrincipal principal,
             @org.springframework.web.bind.annotation.RequestHeader("X-User-Expires-At") long expiresAt,
             jakarta.servlet.http.HttpServletResponse response) {
         response.setHeader("Cache-Control", "no-store");
         response.setHeader("X-Accel-Buffering", "no");
-        return customerNotificationSseService.connect(requireUserId(principal), expiresAt);
+        requireUserId(principal);
+        return customerNotificationSseService.connect(principal, expiresAt);
     }
 
     private Long requireUserId(GatewayUserPrincipal principal) {

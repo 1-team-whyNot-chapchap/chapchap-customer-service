@@ -19,11 +19,8 @@ public class CustomerNotificationSsePublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void publish(CustomerNotificationCreatedEvent event) {
         Long recipientUserId = event.notification().getRecipientUserId();
-        if (recipientUserId == null) {
-            return;
-        }
         try {
-            customerNotificationSseService.publish(recipientUserId, NotificationResponse.from(event.notification(), false));
+            customerNotificationSseService.publish(com.chapchap.customer.global.security.constant.RolePolicy.valueOf(event.notification().getRecipientType().name()), recipientUserId, NotificationResponse.from(event.notification(), false));
         } catch (RuntimeException exception) {
             log.warn("고객 알림 SSE 전달에 실패했습니다. notificationId={}", event.notification().getId(), exception);
         }
