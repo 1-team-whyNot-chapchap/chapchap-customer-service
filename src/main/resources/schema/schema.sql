@@ -59,6 +59,8 @@ create table consultation_summaries (
 ) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_bin;
 
 create table consultation_summary_jobs (
+    cutoff_sequence_no int,
+    attempt_count int not null default 0,
     is_retryable bit not null,
     accepted_at datetime(6),
     callback_received_at datetime(6),
@@ -71,6 +73,7 @@ create table consultation_summary_jobs (
     terminal_fingerprint varchar(64),
     failure_code varchar(100),
     status enum ('ACCEPTED','COMPLETED','FAILED','PENDING','SUBMISSION_FAILED','SUBMITTED') not null,
+    index ix_summary_recovery (status, updated_at),
     primary key (consultation_summary_job_id)
 ) engine=InnoDB default charset=utf8mb4 collate=utf8mb4_bin;
 

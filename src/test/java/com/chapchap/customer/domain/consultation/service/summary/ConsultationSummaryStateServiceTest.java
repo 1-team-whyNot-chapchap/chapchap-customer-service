@@ -127,4 +127,43 @@ class ConsultationSummaryStateServiceTest {
         consultation.close(NOW);
         return consultation;
     }
+
+    @Test
+    void recoveryKeepsOriginalCutoffAndClaimsOnlyOncePerLease() {
+        var consultation = closedConsultation();
+        var job = ConsultationSummaryJob.create(501L, java.util.UUID.randomUUID(), NOW);
+        job.rememberCutoff(2);
+        ReflectionTestUtils.setField(job, "id", 7001L);
+        when(jobRepository.findByIdForUpdate(7001L)).thenReturn(Optional.of(job));
+        when(messageRepository.findByConsultation_IdOrderBySequenceNoAsc(501L)).thenReturn(List.of(
+                ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "원래 질문", 1, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.AI, null, "원래 답변", 2, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "인계 후 질문", 3, NOW)));
+        assertThat(service.claim(7001L, NOW).orElseThrow().messages()).extracting("content")
+                .containsExactly("원래 질문", "원래 답변");
+        assertThat(service.claim(7001L, NOW.plusSeconds(1))).isEmpty();
+        assertThat(service.claim(7001L, NOW.plusSeconds(121))).isPresent();
+        assertThat(job.getAttemptCount()).isEqualTo(2);
+    }
+
+    @Test
+    void explicitRetryPreservesCutoffAndInvalidatesOldFailureCallbackIdentity() {
+        var oldId = java.util.UUID.randomUUID();
+        var job = ConsultationSummaryJob.create(501L, oldId, NOW);
+        ReflectionTestUtils.setField(job, "id", 7001L);
+        job.rememberCutoff(4);
+        job.applyFailed("a".repeat(64),
+                com.chapchap.customer.domain.consultation.dto.summary.ConsultationSummaryCallback.FailureCode.LLM_UNAVAILABLE,
+                true, NOW);
+        when(jobRepository.findByConsultationId(501L)).thenReturn(Optional.of(job));
+        when(jobRepository.findByIdForUpdate(7001L)).thenReturn(Optional.of(job));
+        assertThatThrownBy(() -> service.retryManually(501L, NOW.plusSeconds(29)))
+                .isInstanceOf(ConsultationStateException.class);
+        service.retryManually(501L, NOW.plusSeconds(30));
+        assertThat(job.getStatus().name()).isEqualTo("PENDING");
+        assertThat(job.getRequestId()).isNotEqualTo(oldId);
+        assertThat(job.getCutoffSequenceNo()).isEqualTo(4);
+        assertThatThrownBy(() -> service.retryManually(501L, NOW.plusMinutes(1)))
+                .isInstanceOf(ConsultationStateException.class);
+    }
 }

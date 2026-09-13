@@ -29,6 +29,12 @@ public class AdminConsultationController {
     private final ConsultationService consultationService;
     private final ConsultationSummaryQueryService summaryQueryService;
 
+    @PostMapping("/{consultationId}/summary/retries")
+    public ResponseEntity<GlobalResponse<ConsultationHandoffSummaryResponse>> retrySummary(
+            @AuthenticationPrincipal GatewayUserPrincipal principal, @PathVariable Long consultationId) {
+        return GlobalResponse.success(summaryQueryService.retry(principal, consultationId));
+    }
+
     @GetMapping("/{consultationId}/summary")
     public ResponseEntity<GlobalResponse<ConsultationHandoffSummaryResponse>> findSummary(
             @AuthenticationPrincipal GatewayUserPrincipal principal, @PathVariable Long consultationId) {

@@ -58,6 +58,17 @@ class ConsultationSummaryQueryServiceTest {
     }
 
     @Test
+    void retryRequiresTheSameAssignedAdminBoundary() {
+        assignedConsultation();
+        assertThatThrownBy(() -> query.retry(new GatewayUserPrincipal("12", RolePolicy.ADMIN), 501L))
+                .isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> query.retry(new GatewayUserPrincipal("77", RolePolicy.CUSTOMER), 501L))
+                .isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> query.retry(null, 501L)).isInstanceOf(AccessDeniedException.class);
+        verifyNoInteractions(jobs, summaries);
+    }
+
+    @Test
     void reportsDisabledAbsentPendingAndFailureWithoutExposingInternalFailureCode() {
         assignedConsultation();
         assertThat(query.find(admin, 501L).status()).isEqualTo("DISABLED");
