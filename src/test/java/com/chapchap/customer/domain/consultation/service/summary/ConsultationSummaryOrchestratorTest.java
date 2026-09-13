@@ -44,7 +44,7 @@ class ConsultationSummaryOrchestratorTest {
     @Test
     void submitsHandoffConsultationMessagesAndStoresAcceptedIdentity() {
         PreparedConsultationSummaryJob prepared = prepared();
-        when(stateService.prepare(eq(501L), eq(2), any())).thenReturn(Optional.of(prepared));
+        when(stateService.claimForConsultation(eq(501L), any())).thenReturn(Optional.of(prepared));
         when(client.submit(any())).thenReturn(new CustomerAiConsultationSummaryAccepted(7001L, 501L));
 
         orchestrator.submit(501L, 2);
@@ -54,7 +54,6 @@ class ConsultationSummaryOrchestratorTest {
         verify(client).submit(command.capture());
         assertThat(command.getValue().consultationStatus().name()).isEqualTo("WAITING_ADMIN");
         assertThat(command.getValue().messages()).hasSize(2);
-        verify(stateService).markSubmitted(eq(7001L), any(LocalDateTime.class));
         verify(stateService).markAccepted(eq(prepared), any(), any(LocalDateTime.class));
     }
 
@@ -64,26 +63,26 @@ class ConsultationSummaryOrchestratorTest {
         PreparedConsultationSummaryJob oversized = new PreparedConsultationSummaryJob(
                 original.requestId(), original.summaryJobId(), original.consultationId(),
                 java.util.Collections.nCopies(501, original.messages().getFirst()));
-        when(stateService.prepare(eq(501L), eq(2), any())).thenReturn(Optional.of(oversized));
+        when(stateService.claimForConsultation(eq(501L), any())).thenReturn(Optional.of(oversized));
 
         orchestrator.submit(501L, 2);
 
         verifyNoInteractions(client);
-        verify(stateService).markSubmissionFailed(eq(7001L),
+        verify(stateService).markAttemptFailed(eq(oversized),
                 eq(CustomerAiConsultationSummaryClientException.Reason.CONTRACT_ERROR),
                 eq(false), any(LocalDateTime.class));
     }
 
     @Test
     void recordsRetryableTimeoutWithoutReopeningConsultation() {
-        when(stateService.prepare(eq(501L), eq(2), any())).thenReturn(Optional.of(prepared()));
+        when(stateService.claimForConsultation(eq(501L), any())).thenReturn(Optional.of(prepared()));
         when(client.submit(any())).thenThrow(new CustomerAiConsultationSummaryClientException(
                 CustomerAiConsultationSummaryClientException.Reason.TIMEOUT));
 
         orchestrator.submit(501L, 2);
 
-        verify(stateService).markSubmissionFailed(
-                eq(7001L),
+        verify(stateService).markAttemptFailed(
+                eq(prepared()),
                 eq(CustomerAiConsultationSummaryClientException.Reason.TIMEOUT),
                 eq(true),
                 any(LocalDateTime.class));

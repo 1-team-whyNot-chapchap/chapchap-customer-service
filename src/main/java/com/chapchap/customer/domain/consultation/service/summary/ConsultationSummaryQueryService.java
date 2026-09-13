@@ -20,6 +20,8 @@ public class ConsultationSummaryQueryService {
     private final ConsultationSummaryJobRepository jobRepository;
     @Value("${customer.ai.consultation-summary.async-enabled:false}")
     private boolean enabled;
+    @org.springframework.beans.factory.annotation.Autowired
+    private org.springframework.beans.factory.ObjectProvider<ConsultationSummaryStateService> stateService;
 
     @Transactional(readOnly = true)
     public ConsultationHandoffSummaryResponse find(GatewayUserPrincipal principal, Long consultationId) {
@@ -31,8 +33,24 @@ public class ConsultationSummaryQueryService {
         if (summary.isPresent()) {
             return new ConsultationHandoffSummaryResponse(consultationId, "COMPLETED", summary.get().getAiSummary());
         }
-        String status = jobRepository.findByConsultationId(consultationId)
-                .map(job -> job.getStatus().name()).orElse(enabled ? "NOT_REQUESTED" : "DISABLED");
+        var job = jobRepository.findByConsultationId(consultationId).orElse(null);
+        if (job != null) {
+            boolean retryAllowed = enabled && job.getCutoffSequenceNo() != null
+                    && java.util.Set.of("FAILED", "SUBMISSION_FAILED").contains(job.getStatus().name());
+            return new ConsultationHandoffSummaryResponse(consultationId, job.getStatus().name(), null,
+                    retryAllowed);
+        }
+        String status = enabled ? "NOT_REQUESTED" : "DISABLED";
         return new ConsultationHandoffSummaryResponse(consultationId, status, null);
+    }
+
+    @Transactional
+    public ConsultationHandoffSummaryResponse retry(GatewayUserPrincipal principal, Long consultationId) {
+        find(principal, consultationId); // Same role and assignment boundary as reading a summary.
+        var service = enabled ? stateService.getIfAvailable() : null;
+        if (service == null) throw new com.chapchap.customer.global.exception.consultation.ConsultationStateException(
+                "요약 기능이 비활성화되어 있습니다.");
+        service.retryManually(consultationId, java.time.LocalDateTime.now(java.time.ZoneId.of("Asia/Seoul")));
+        return find(principal, consultationId);
     }
 }

@@ -26,6 +26,7 @@ class ConsultationSummaryEventListenerTest {
     @Autowired ApplicationEventPublisher publisher;
     @Autowired PlatformTransactionManager transactions;
     @MockitoBean ConsultationSummaryOrchestrator orchestrator;
+    @MockitoBean ConsultationSummaryStateService stateService;
 
     @Test
     void schedulesOnlyCommittedHandoffAndNeverClosure() {
@@ -35,12 +36,14 @@ class ConsultationSummaryEventListenerTest {
             verifyNoInteractions(orchestrator);
         });
         verify(orchestrator).queue(501L, 4);
+        verify(stateService).prepare(eq(501L), eq(4), any());
+        clearInvocations(stateService);
         clearInvocations(orchestrator);
         transaction.executeWithoutResult(status -> {
             publisher.publishEvent(new ConsultationHandedOffEvent(502L, 8));
             status.setRollbackOnly();
         });
         transaction.executeWithoutResult(status -> publisher.publishEvent(new ConsultationClosedEvent(501L)));
-        verifyNoInteractions(orchestrator);
+        verifyNoInteractions(orchestrator, stateService);
     }
 }
