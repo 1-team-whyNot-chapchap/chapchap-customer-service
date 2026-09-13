@@ -83,7 +83,7 @@ public class NotificationCreationService {
                 ? "ADMIN" : String.valueOf(recipientUserId));
         validateOperationConditions(event, template.notificationType());
 
-        notificationRepository.save(Notification.create(
+        Notification notification = notificationRepository.save(Notification.create(
                 recipient,
                 recipientUserId,
                 event.eventId(),
@@ -101,6 +101,7 @@ public class NotificationCreationService {
                 event.occurredAtAsOffsetDateTime().toLocalDateTime(),
                 LocalDateTime.now()
         ));
+        applicationEventPublisher.publishEvent(new CustomerNotificationCreatedEvent(notification));
     }
 
     private CustomerNotificationCommand customerCommand(
