@@ -17,8 +17,8 @@ public record ConsultationSummaryJobSnapshot(
         if (summaryJobId <= 0 || consultationId <= 0) {
             throw new IllegalArgumentException("Summary job identity is invalid.");
         }
-        if (consultationStatus != ConsultationStatus.CLOSED) {
-            throw new IllegalArgumentException("Summary job must remain attached to a CLOSED consultation.");
+        if (consultationStatus == null || consultationStatus == ConsultationStatus.AI_HANDLING) {
+            throw new IllegalArgumentException("Summary job must remain attached to a handed off or CLOSED consultation.");
         }
         if (terminalCallback != null
                 && (terminalCallback.summaryJobId() != summaryJobId

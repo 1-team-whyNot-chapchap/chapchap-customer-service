@@ -37,7 +37,7 @@ public class NotificationService {
     public void markAsRead(GatewayUserPrincipal principal, Long notificationId) {
         Long userId = requireUserId(principal);
         Notification notification = findVisibleNotification(principal.role(), userId, notificationId);
-        if (!notificationReadRepository.existsByNotification_IdAndReaderUserId(notificationId, userId)) {
+        if (notificationReadRepository.findByNotification_IdAndReaderUserId(notificationId, userId).isEmpty()) {
             notificationReadRepository.save(NotificationRead.create(notification, userId, LocalDateTime.now()));
         }
     }
@@ -45,11 +45,9 @@ public class NotificationService {
     @Transactional
     public void markAllAsRead(GatewayUserPrincipal principal) {
         Long userId = requireUserId(principal);
-        findVisibleNotifications(principal.role(), userId).forEach(notification -> {
-            if (!notificationReadRepository.existsByNotification_IdAndReaderUserId(notification.getId(), userId)) {
-                notificationReadRepository.save(NotificationRead.create(notification, userId, LocalDateTime.now()));
-            }
-        });
+        // Lock in a stable order, sharing the same lock as individual read requests.
+        findVisibleNotifications(principal.role(), userId).stream()
+                .map(Notification::getId).sorted().forEach(id -> markAsRead(principal, id));
     }
 
     private List<Notification> findVisibleNotifications(RolePolicy role, Long userId) {

@@ -59,6 +59,12 @@ public class ConsultationSummaryJob {
     @Column(name = "is_retryable", nullable = false)
     private boolean retryable;
 
+    @Column(name = "cutoff_sequence_no")
+    private Integer cutoffSequenceNo;
+
+    @Column(name = "attempt_count", nullable = false)
+    private int attemptCount;
+
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
@@ -99,6 +105,7 @@ public class ConsultationSummaryJob {
 
     public void markSubmitted(LocalDateTime now) {
         if (!isTerminal()) {
+            attemptCount++;
             status = ConsultationSummaryJobStatus.SUBMITTED;
             submittedAt = Objects.requireNonNull(now);
             updatedAt = now;
@@ -152,6 +159,42 @@ public class ConsultationSummaryJob {
     public boolean isTerminal() {
         return terminalFingerprint != null;
     }
+
+    public void rememberCutoff(int cutoff) {
+        if (cutoff < 1 || cutoffSequenceNo != null) {
+            throw new IllegalArgumentException("요약 범위를 변경할 수 없습니다.");
+        }
+        cutoffSequenceNo = cutoff;
+    }
+
+    public boolean canRecover(LocalDateTime now) {
+        if (cutoffSequenceNo == null || status == ConsultationSummaryJobStatus.COMPLETED) return false;
+        if (status == ConsultationSummaryJobStatus.PENDING) return true;
+        if (attemptCount >= 3) return false;
+        if (status == ConsultationSummaryJobStatus.FAILED
+                || status == ConsultationSummaryJobStatus.SUBMISSION_FAILED) {
+            return retryable && !updatedAt.isAfter(now.minusSeconds(30));
+        }
+        return !updatedAt.isAfter(now.minusSeconds(120));
+    }
+
+    public void retry(LocalDateTime now) {
+        if (status == ConsultationSummaryJobStatus.COMPLETED || cutoffSequenceNo == null) {
+            throw new IllegalStateException("완료되었거나 원본 범위가 없는 요약입니다.");
+        }
+        if (isTerminal()) requestId = UUID.randomUUID();
+        terminalFingerprint = null;
+        failureCode = null;
+        retryable = false;
+        callbackReceivedAt = null;
+        acceptedAt = null;
+        status = ConsultationSummaryJobStatus.PENDING;
+        updatedAt = now;
+    }
+
+    public Integer getCutoffSequenceNo() { return cutoffSequenceNo; }
+    public int getAttemptCount() { return attemptCount; }
+    public LocalDateTime getUpdatedAt() { return updatedAt; }
 
     private String requireFingerprint(String value) {
         if (value == null || !value.matches("[0-9a-f]{64}")) {

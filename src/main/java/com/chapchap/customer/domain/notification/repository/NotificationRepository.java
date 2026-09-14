@@ -12,12 +12,14 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     boolean existsByBusinessKey(String businessKey);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     Optional<Notification> findByIdAndRecipientTypeAndRecipientUserId(
             Long notificationId,
             NotificationRecipientType recipientType,
             Long recipientUserId
     );
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     Optional<Notification> findByIdAndRecipientTypeAndRecipientUserIdIsNull(
             Long notificationId,
             NotificationRecipientType recipientType

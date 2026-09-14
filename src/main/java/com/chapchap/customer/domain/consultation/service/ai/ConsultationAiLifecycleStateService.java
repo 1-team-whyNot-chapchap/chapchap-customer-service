@@ -12,6 +12,7 @@ import com.chapchap.customer.domain.consultation.constant.ConsultationSenderType
 import com.chapchap.customer.domain.consultation.constant.ConsultationStatus;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationAiResponseRequestedEvent;
 import com.chapchap.customer.domain.consultation.dto.event.ConsultationMessageSavedEvent;
+import com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationMessageSourceRepository;
 import com.chapchap.customer.domain.consultation.repository.ConsultationRepository;
@@ -46,6 +47,8 @@ import java.util.UUID;
 )
 public class ConsultationAiLifecycleStateService {
     private static final int MAX_CONTEXT_MESSAGES = 20;
+    @org.springframework.beans.factory.annotation.Value("${customer.ai.consultation-response.boundaries-enabled:false}")
+    private boolean boundariesEnabled;
 
     private final ConsultationRepository consultationRepository;
     private final ConsultationMessageRepository messageRepository;
@@ -82,13 +85,15 @@ public class ConsultationAiLifecycleStateService {
         int contextStart = Math.max(0, triggerIndex - MAX_CONTEXT_MESSAGES);
         List<String> context = messages.subList(contextStart, triggerIndex)
                 .stream()
-                .map(ConsultationMessage::getContent)
+                .map(message -> boundariesEnabled ? new tools.jackson.databind.ObjectMapper().writeValueAsString(
+                        Map.of("sender", message.getSenderType().name(), "sequence", message.getSequenceNo(),
+                                "content", message.getContent())) : message.getContent())
                 .toList();
 
         CustomerAiSubjectAssertionRequest subject = new CustomerAiSubjectAssertionRequest(
                 event.userId(),
                 event.role(),
-                List.of(CustomerAiSubjectScope.POLICY_READ.value()),
+                ConsultationReadScopes.forMessage(event.role(), trigger.getContent()),
                 requestId,
                 event.consultationId()
         );
@@ -113,9 +118,11 @@ public class ConsultationAiLifecycleStateService {
         if (!command.requestId().equals(result.requestId())) {
             throw new ConsultationStateException("Customer-AI 응답 requestId가 요청과 일치하지 않습니다.");
         }
-        if (result.route() == CustomerAiConsultationResult.Route.USER_STATE
-                || result.route() == CustomerAiConsultationResult.Route.POLICY_AND_STATE) {
-            throw new ConsultationStateException("Current-State 경로는 아직 활성화되지 않았습니다.");
+        if ((result.route() == CustomerAiConsultationResult.Route.USER_STATE
+                || result.route() == CustomerAiConsultationResult.Route.POLICY_AND_STATE)
+                && command.subject().allowedAiScopes().stream()
+                .noneMatch(scope -> !CustomerAiSubjectScope.POLICY_READ.value().equals(scope))) {
+            throw new ConsultationStateException("Current-State 조회 권한이 없는 요청입니다.");
         }
         Consultation consultation = consultationRepository.findByIdForMessageWrite(command.consultationId())
                 .orElseThrow(ConsultationNotFoundException::new);
@@ -219,6 +226,9 @@ public class ConsultationAiLifecycleStateService {
         String beforeStatus = consultation.getStatus().name();
         if (consultation.requestAdminHandoff(now)) {
             auditLogWriter.recordConsultationAiEscalated(consultation, beforeStatus, reason, now);
+            int cutoff = messageRepository.findTopByConsultation_IdOrderBySequenceNoDesc(consultation.getId())
+                    .map(ConsultationMessage::getSequenceNo).orElse(0);
+            eventPublisher.publishEvent(new ConsultationHandedOffEvent(consultation.getId(), cutoff));
         }
     }
 

@@ -36,6 +36,39 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class HttpCustomerAiConsultationClientTest {
+    @Test
+    void preparesWithoutStateScopesThenExecutesBoundPlanWithMinimalScopes() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("https://customer-ai.internal");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        List<List<String>> signedScopes = new ArrayList<>();
+        var credentials = new CustomerAiRequestCredentialsProvider(() -> "service.header.signature", subject -> {
+            signedScopes.add(subject.allowedAiScopes());
+            return "subject.header.signature";
+        });
+        var client = new HttpCustomerAiConsultationClient(builder.build(), credentials,
+                new CustomerAiConsultationResponseParser(new ObjectMapper())).withBoundaries(true);
+        server.expect(requestTo("https://customer-ai.internal/internal/v1/consultation-interpretations"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("customer-ai.policy.read")))
+                .andRespond(withSuccess("""
+                        {"schemaVersion":"1.0","requestId":"11111111-1111-4111-8111-111111111111",
+                         "planId":"22222222-2222-4222-8222-222222222222","route":"USER_STATE",
+                         "capabilities":["CAP-DELIVERY-CURRENT"]}
+                        """, MediaType.APPLICATION_JSON));
+        server.expect(requestTo("https://customer-ai.internal/internal/v1/consultation-plan-responses"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("22222222-2222-4222-8222-222222222222")))
+                .andRespond(withSuccess("""
+                        {"schemaVersion":"1.0","requestId":"11111111-1111-4111-8111-111111111111",
+                         "route":"USER_STATE","decision":"ANSWER","answer":"오늘 배송은 완료 상태예요.",
+                         "degraded":false,"handoffRequired":false,"evidence":[]}
+                        """, MediaType.APPLICATION_JSON));
+        var input = new CustomerAiConsultationCommand(REQUEST_ID, 501, 9002, subject(RolePolicy.CUSTOMER),
+                "지금 배달중인거 있어?", List.of());
+        var execution = client.prepare(input);
+        assertThat(client.respond(execution).answer()).contains("완료");
+        assertThat(signedScopes).containsExactly(List.of("customer-ai.policy.read"),
+                List.of("customer-ai.policy.read", "delivery.status.read"));
+        server.verify();
+    }
     private static final UUID REQUEST_ID = UUID.fromString("11111111-1111-4111-8111-111111111111");
 
     @Test

@@ -64,8 +64,9 @@ public class ConsultationAiResponseOrchestrator {
             return;
         }
 
-        CustomerAiConsultationCommand command = prepared.command();
+        CustomerAiConsultationCommand original = prepared.command();
         try {
+            CustomerAiConsultationCommand command = customerAiClient.prepare(original);
             CustomerAiConsultationResult result = customerAiClient.respond(command);
             if (stateService.apply(command, result, LocalDateTime.now(KST_CLOCK))) {
                 diagnosticPublisher().publish(traceId -> CustomerAiDiagnosticEvent.consultationLifecycleApplied(
@@ -77,11 +78,21 @@ public class ConsultationAiResponseOrchestrator {
                 ));
             }
         } catch (CustomerAiConsultationClientException exception) {
-            fallback(command, CustomerAiDiagnosticFailureCode.from(exception.reason()));
+            if (customerAiClient.usesBoundaries()
+                    && (exception.reason() == CustomerAiConsultationClientException.Reason.DEPENDENCY_UNAVAILABLE
+                    || exception.reason() == CustomerAiConsultationClientException.Reason.TIMEOUT)) {
+                stateService.apply(original, new CustomerAiConsultationResult(original.requestId(),
+                        CustomerAiConsultationResult.Decision.DEGRADED,
+                        "지금은 상담 정보를 확인할 수 없어요. 잠시 후 다시 질문해 주세요. 상담사 연결도 이용할 수 있어요.",
+                        CustomerAiConsultationResult.Route.UNSUPPORTED, true, false, java.util.List.of()),
+                        LocalDateTime.now(KST_CLOCK));
+                return;
+            }
+            fallback(original, CustomerAiDiagnosticFailureCode.from(exception.reason()));
         } catch (CustomerAiAuthenticationUnavailableException exception) {
-            fallback(command, CustomerAiDiagnosticFailureCode.AUTHENTICATION_UNAVAILABLE);
+            fallback(original, CustomerAiDiagnosticFailureCode.AUTHENTICATION_UNAVAILABLE);
         } catch (RuntimeException exception) {
-            fallback(command, CustomerAiDiagnosticFailureCode.STATE_CONFLICT);
+            fallback(original, CustomerAiDiagnosticFailureCode.STATE_CONFLICT);
         }
     }
 

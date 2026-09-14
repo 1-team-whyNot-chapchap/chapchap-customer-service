@@ -92,7 +92,7 @@ class ConsultationAiLifecycleStateServiceTest {
         assertThat(CustomerAiConsultationRequest.from(command).knowledgeVersionIds()).containsExactly(101L, 102L);
         assertThat(command.message()).isEqualTo("환불 정책");
         assertThat(command.conversationContext()).containsExactly("이전 답변");
-        assertThat(command.subject().allowedAiScopes()).containsExactly("customer-ai.policy.read");
+        assertThat(command.subject().allowedAiScopes()).containsExactly("customer-ai.policy.read", "subscription.refund.read");
         assertThat(command.subject().role()).isEqualTo(RolePolicy.CUSTOMER);
     }
 
@@ -154,6 +154,7 @@ class ConsultationAiLifecycleStateServiceTest {
         verify(messageRepository, never()).save(any());
         verify(auditLogWriter).recordConsultationAiEscalated(
                 eq(consultation), eq("AI_HANDLING"), eq("HANDOFF"), eq(NOW));
+        verify(eventPublisher).publishEvent(new com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent(501L, 0));
     }
 
     @Test
@@ -187,10 +188,11 @@ class ConsultationAiLifecycleStateServiceTest {
         assertThat(consultation.getStatus()).isEqualTo(ConsultationStatus.WAITING_ADMIN);
         verify(auditLogWriter).recordConsultationAiEscalated(
                 eq(consultation), eq("AI_HANDLING"), eq("TIMEOUT"), eq(NOW));
+        verify(eventPublisher).publishEvent(new com.chapchap.customer.domain.consultation.dto.event.ConsultationHandedOffEvent(501L, 0));
     }
 
     @Test
-    void rejectsCurrentStateRouteUntilCapabilityRuntimeIsConnected() {
+    void rejectsCurrentStateRouteWhenRequestHasNoReadPermission() {
         CustomerAiConsultationResult result = new CustomerAiConsultationResult(
                 REQUEST_ID,
                 CustomerAiConsultationResult.Decision.ANSWER,
@@ -214,6 +216,29 @@ class ConsultationAiLifecycleStateServiceTest {
 
     private CustomerAiConsultationCommand command() {
         return serviceCommand(REQUEST_ID);
+    }
+
+    @Test
+    void storesCurrentStateAnswerWithSignedReadPermission() {
+        Consultation consultation = consultation();
+        CustomerAiConsultationCommand stateCommand = new CustomerAiConsultationCommand(
+                REQUEST_ID, 501L, 9002L,
+                new com.chapchap.customer.domain.customerai.request.security.CustomerAiSubjectAssertionRequest(
+                        42L, RolePolicy.CUSTOMER, List.of("customer-ai.policy.read", "delivery.status.read"),
+                        REQUEST_ID, 501L), "배송이 안 왔어요", List.of(), List.of());
+        when(consultationRepository.findByIdForMessageWrite(501L)).thenReturn(Optional.of(consultation));
+        when(messageRepository.save(any(ConsultationMessage.class))).thenAnswer(invocation -> {
+            ConsultationMessage saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "id", 9003L);
+            return saved;
+        });
+        CustomerAiConsultationResult result = new CustomerAiConsultationResult(
+                REQUEST_ID, CustomerAiConsultationResult.Decision.ANSWER,
+                "오늘 조회 가능한 배송 정보가 없습니다.", CustomerAiConsultationResult.Route.USER_STATE,
+                false, false, List.of());
+        assertThat(service.apply(stateCommand, result, NOW)).isTrue();
+        verify(messageRepository).save(any(ConsultationMessage.class));
+        assertThat(consultation.getStatus()).isEqualTo(ConsultationStatus.AI_HANDLING);
     }
 
     private CustomerAiConsultationCommand serviceCommand(UUID requestId) {

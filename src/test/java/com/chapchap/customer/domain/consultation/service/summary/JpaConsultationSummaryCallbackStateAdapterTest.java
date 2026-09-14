@@ -52,6 +52,23 @@ class JpaConsultationSummaryCallbackStateAdapterTest {
                 jobRepository, summaryRepository, consultationRepository, auditLogWriter);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = com.chapchap.customer.domain.consultation.constant.ConsultationStatus.class,
+            names = {"WAITING_ADMIN", "IN_PROGRESS", "CLOSED"})
+    void storesHandoffSummaryWithoutChangingLifecycle(
+            com.chapchap.customer.domain.consultation.constant.ConsultationStatus status) {
+        ConsultationSummaryJob job = job();
+        Consultation consultation = closedConsultation();
+        ReflectionTestUtils.setField(consultation, "status", status);
+        stubCurrent(job, consultation);
+        assertThat(adapter.applyAtomically(headers(), completed("전환 전 AI 요약")))
+                .isEqualTo(ConsultationSummaryCallbackOutcome.APPLIED_COMPLETED);
+        assertThat(consultation.getStatus()).isEqualTo(status);
+        assertThat(adapter.applyAtomically(headers(), completed("전환 전 AI 요약")))
+                .isEqualTo(ConsultationSummaryCallbackOutcome.IGNORED_DUPLICATE);
+        verify(summaryRepository).save(any());
+    }
+
     @Test
     void completedCallbackPersistsAiSummaryAndKeepsConsultationClosed() {
         ConsultationSummaryJob job = job();

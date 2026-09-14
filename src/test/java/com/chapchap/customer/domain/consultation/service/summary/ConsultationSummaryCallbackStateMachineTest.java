@@ -36,9 +36,9 @@ class ConsultationSummaryCallbackStateMachineTest {
     }
 
     @Test
-    void snapshotRejectsAnyConsultationThatIsNotClosed() {
+    void snapshotRejectsConsultationStillHandledByAi() {
         assertThatThrownBy(() -> new ConsultationSummaryJobSnapshot(
-                REQUEST_ID, 7001L, 501L, ConsultationStatus.IN_PROGRESS, null))
+                REQUEST_ID, 7001L, 501L, ConsultationStatus.AI_HANDLING, null))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("CLOSED");
     }

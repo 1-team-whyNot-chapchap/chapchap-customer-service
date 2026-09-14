@@ -56,20 +56,20 @@ class ConsultationSummaryStateServiceTest {
         when(jobRepository.findByConsultationId(501L)).thenReturn(Optional.empty());
         when(messageRepository.findByConsultation_IdOrderBySequenceNoAsc(501L)).thenReturn(List.of(
                 ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "첫 질문", 1, NOW),
-                ConsultationMessage.create(consultation, ConsultationSenderType.ADMIN, 11L, "답변", 2, NOW)));
+                ConsultationMessage.create(consultation, ConsultationSenderType.AI, null, "답변", 2, NOW)));
         when(jobRepository.saveAndFlush(any())).thenAnswer(invocation -> {
             ConsultationSummaryJob job = invocation.getArgument(0);
             ReflectionTestUtils.setField(job, "id", 7001L);
             return job;
         });
 
-        PreparedConsultationSummaryJob prepared = service.prepare(501L, NOW).orElseThrow();
+        PreparedConsultationSummaryJob prepared = service.prepare(501L, 2, NOW).orElseThrow();
 
         assertThat(prepared.messages()).extracting("content").containsExactly("첫 질문", "답변");
         assertThat(prepared.messages()).extracting("senderType")
                 .containsExactly(
                         CustomerAiConsultationSummaryCommand.SenderType.USER,
-                        CustomerAiConsultationSummaryCommand.SenderType.ADMIN);
+                        CustomerAiConsultationSummaryCommand.SenderType.AI);
         ArgumentCaptor<ConsultationSummaryJob> job = ArgumentCaptor.forClass(ConsultationSummaryJob.class);
         verify(jobRepository).saveAndFlush(job.capture());
         assertThat(job.getValue().getConsultationId()).isEqualTo(501L);
@@ -82,7 +82,7 @@ class ConsultationSummaryStateServiceTest {
         when(jobRepository.findByConsultationId(501L)).thenReturn(Optional.of(
                 ConsultationSummaryJob.create(501L, java.util.UUID.randomUUID(), NOW)));
 
-        assertThat(service.prepare(501L, NOW)).isEmpty();
+        assertThat(service.prepare(501L, 2, NOW)).isEmpty();
         verify(messageRepository, never()).findByConsultation_IdOrderBySequenceNoAsc(any());
         verify(jobRepository, never()).saveAndFlush(any());
     }
@@ -93,10 +93,32 @@ class ConsultationSummaryStateServiceTest {
         ReflectionTestUtils.setField(consultation, "id", 501L);
         when(consultationRepository.findByIdForMessageWrite(501L)).thenReturn(Optional.of(consultation));
 
-        assertThatThrownBy(() -> service.prepare(501L, NOW))
+        assertThatThrownBy(() -> service.prepare(501L, 2, NOW))
                 .isInstanceOf(ConsultationStateException.class);
 
         verify(jobRepository, never()).saveAndFlush(any());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.EnumSource(value = com.chapchap.customer.domain.consultation.constant.ConsultationStatus.class,
+            names = {"WAITING_ADMIN", "IN_PROGRESS", "CLOSED"})
+    void handoffSnapshotExcludesMessagesAfterCutoffEvenWhenAgentHasAcceptedOrClosed(
+            com.chapchap.customer.domain.consultation.constant.ConsultationStatus status) {
+        Consultation consultation = closedConsultation();
+        ReflectionTestUtils.setField(consultation, "status", status);
+        when(consultationRepository.findByIdForMessageWrite(501L)).thenReturn(Optional.of(consultation));
+        when(messageRepository.findByConsultation_IdOrderBySequenceNoAsc(501L)).thenReturn(List.of(
+                ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "고객 질문", 1, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.AI, null, "AI 응답", 2, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.ADMIN, 11L, "상담사 답변", 3, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "연결 후 질문", 4, NOW)));
+        when(jobRepository.saveAndFlush(any())).thenAnswer(invocation -> {
+            ConsultationSummaryJob job = invocation.getArgument(0);
+            ReflectionTestUtils.setField(job, "id", 7001L);
+            return job;
+        });
+        assertThat(service.prepare(501L, 2, NOW).orElseThrow().messages())
+                .extracting("content").containsExactly("고객 질문", "AI 응답");
     }
 
     private Consultation closedConsultation() {
@@ -104,5 +126,44 @@ class ConsultationSummaryStateServiceTest {
         ReflectionTestUtils.setField(consultation, "id", 501L);
         consultation.close(NOW);
         return consultation;
+    }
+
+    @Test
+    void recoveryKeepsOriginalCutoffAndClaimsOnlyOncePerLease() {
+        var consultation = closedConsultation();
+        var job = ConsultationSummaryJob.create(501L, java.util.UUID.randomUUID(), NOW);
+        job.rememberCutoff(2);
+        ReflectionTestUtils.setField(job, "id", 7001L);
+        when(jobRepository.findByIdForUpdate(7001L)).thenReturn(Optional.of(job));
+        when(messageRepository.findByConsultation_IdOrderBySequenceNoAsc(501L)).thenReturn(List.of(
+                ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "원래 질문", 1, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.AI, null, "원래 답변", 2, NOW),
+                ConsultationMessage.create(consultation, ConsultationSenderType.USER, 77L, "인계 후 질문", 3, NOW)));
+        assertThat(service.claim(7001L, NOW).orElseThrow().messages()).extracting("content")
+                .containsExactly("원래 질문", "원래 답변");
+        assertThat(service.claim(7001L, NOW.plusSeconds(1))).isEmpty();
+        assertThat(service.claim(7001L, NOW.plusSeconds(121))).isPresent();
+        assertThat(job.getAttemptCount()).isEqualTo(2);
+    }
+
+    @Test
+    void explicitRetryPreservesCutoffAndInvalidatesOldFailureCallbackIdentity() {
+        var oldId = java.util.UUID.randomUUID();
+        var job = ConsultationSummaryJob.create(501L, oldId, NOW);
+        ReflectionTestUtils.setField(job, "id", 7001L);
+        job.rememberCutoff(4);
+        job.applyFailed("a".repeat(64),
+                com.chapchap.customer.domain.consultation.dto.summary.ConsultationSummaryCallback.FailureCode.LLM_UNAVAILABLE,
+                true, NOW);
+        when(jobRepository.findByConsultationId(501L)).thenReturn(Optional.of(job));
+        when(jobRepository.findByIdForUpdate(7001L)).thenReturn(Optional.of(job));
+        assertThatThrownBy(() -> service.retryManually(501L, NOW.plusSeconds(29)))
+                .isInstanceOf(ConsultationStateException.class);
+        service.retryManually(501L, NOW.plusSeconds(30));
+        assertThat(job.getStatus().name()).isEqualTo("PENDING");
+        assertThat(job.getRequestId()).isNotEqualTo(oldId);
+        assertThat(job.getCutoffSequenceNo()).isEqualTo(4);
+        assertThatThrownBy(() -> service.retryManually(501L, NOW.plusMinutes(1)))
+                .isInstanceOf(ConsultationStateException.class);
     }
 }

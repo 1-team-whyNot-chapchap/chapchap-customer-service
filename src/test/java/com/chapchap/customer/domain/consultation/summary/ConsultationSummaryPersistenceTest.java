@@ -47,6 +47,24 @@ class ConsultationSummaryPersistenceTest {
     }
 
     @Test
+    void recoveryQueryReloadsCommittedCutoffAndAttempts() {
+        var now = LocalDateTime.now();
+        var job = ConsultationSummaryJob.create(502L, UUID.randomUUID(), now);
+        job.rememberCutoff(8);
+        jobRepository.saveAndFlush(job);
+        entityManager.clear();
+        var ids = jobRepository.findRecoveryCandidates(now.minusSeconds(30),
+                org.springframework.data.domain.PageRequest.of(0, 50));
+        assertThat(ids).contains(job.getId());
+        var loaded = jobRepository.findByIdForUpdate(job.getId()).orElseThrow();
+        assertThat(loaded.getCutoffSequenceNo()).isEqualTo(8);
+        loaded.markSubmitted(now);
+        jobRepository.flush();
+        entityManager.clear();
+        assertThat(jobRepository.findById(job.getId()).orElseThrow().getAttemptCount()).isEqualTo(1);
+    }
+
+    @Test
     void enforcesOneSummaryJobPerConsultation() {
         LocalDateTime now = LocalDateTime.now();
         jobRepository.saveAndFlush(ConsultationSummaryJob.create(501L, UUID.randomUUID(), now));

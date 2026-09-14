@@ -3,6 +3,8 @@ package com.chapchap.customer.domain.consultation.controller;
 import com.chapchap.customer.domain.consultation.response.AdminConsultationResponse;
 import com.chapchap.customer.domain.consultation.response.ConsultationResponse;
 import com.chapchap.customer.domain.consultation.service.ConsultationService;
+import com.chapchap.customer.domain.consultation.service.summary.ConsultationSummaryQueryService;
+import com.chapchap.customer.domain.consultation.response.summary.ConsultationHandoffSummaryResponse;
 import com.chapchap.customer.global.response.GlobalResponse;
 import com.chapchap.customer.global.security.context.GatewayUserPrincipal;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,19 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class AdminConsultationController {
     private final ConsultationService consultationService;
+    private final ConsultationSummaryQueryService summaryQueryService;
+
+    @PostMapping("/{consultationId}/summary/retries")
+    public ResponseEntity<GlobalResponse<ConsultationHandoffSummaryResponse>> retrySummary(
+            @AuthenticationPrincipal GatewayUserPrincipal principal, @PathVariable Long consultationId) {
+        return GlobalResponse.success(summaryQueryService.retry(principal, consultationId));
+    }
+
+    @GetMapping("/{consultationId}/summary")
+    public ResponseEntity<GlobalResponse<ConsultationHandoffSummaryResponse>> findSummary(
+            @AuthenticationPrincipal GatewayUserPrincipal principal, @PathVariable Long consultationId) {
+        return GlobalResponse.success(summaryQueryService.find(principal, consultationId));
+    }
 
     @GetMapping
     public ResponseEntity<GlobalResponse<List<AdminConsultationResponse>>> findWaitingConsultations() {

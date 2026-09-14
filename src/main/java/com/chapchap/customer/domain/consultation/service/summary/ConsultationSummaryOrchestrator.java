@@ -29,47 +29,61 @@ public class ConsultationSummaryOrchestrator {
     private final CustomerAiConsultationSummaryClient customerAiClient;
     private final TaskScheduler knowledgeProcessingTaskScheduler;
 
-    public void queue(Long consultationId) {
+    public void queue(Long consultationId, int lastMessageSequenceNo) {
         knowledgeProcessingTaskScheduler.schedule(
-                () -> submit(consultationId),
+                () -> submit(consultationId, lastMessageSequenceNo),
                 Instant.now(KST_CLOCK)
         );
     }
 
-    void submit(Long consultationId) {
+    void submit(Long consultationId, int lastMessageSequenceNo) {
         PreparedConsultationSummaryJob prepared = stateService
-                .prepare(consultationId, LocalDateTime.now(KST_CLOCK))
+                .claimForConsultation(consultationId, LocalDateTime.now(KST_CLOCK))
                 .orElse(null);
         if (prepared == null) {
             return;
         }
 
-        stateService.markSubmitted(prepared.summaryJobId(), LocalDateTime.now(KST_CLOCK));
+        deliver(prepared);
+    }
 
+    @org.springframework.scheduling.annotation.Scheduled(
+            fixedDelayString = "${customer.ai.consultation-summary.recovery-delay-ms:30000}", initialDelay = 10000)
+    public void recover() {
+        for (Long id : stateService.recoveryCandidates(LocalDateTime.now(KST_CLOCK))) {
+            try {
+                stateService.claim(id, LocalDateTime.now(KST_CLOCK)).ifPresent(this::deliver);
+            } catch (RuntimeException exception) {
+                org.slf4j.LoggerFactory.getLogger(getClass()).warn("Summary recovery failed for job {}", id);
+            }
+        }
+    }
+
+    private void deliver(PreparedConsultationSummaryJob prepared) {
         try {
             CustomerAiConsultationSummaryCommand command = new CustomerAiConsultationSummaryCommand(
                     prepared.requestId(), prepared.summaryJobId(), prepared.consultationId(),
-                    com.chapchap.customer.domain.consultation.constant.ConsultationStatus.CLOSED,
+                    com.chapchap.customer.domain.consultation.constant.ConsultationStatus.WAITING_ADMIN,
                     prepared.messages()
             );
             CustomerAiConsultationSummaryAccepted accepted = customerAiClient.submit(command);
             stateService.markAccepted(prepared, accepted, LocalDateTime.now(KST_CLOCK));
         } catch (IllegalArgumentException exception) {
-            stateService.markSubmissionFailed(
-                    prepared.summaryJobId(),
+            stateService.markAttemptFailed(
+                    prepared,
                     CustomerAiConsultationSummaryClientException.Reason.CONTRACT_ERROR,
                     false,
                     LocalDateTime.now(KST_CLOCK));
         } catch (CustomerAiConsultationSummaryClientException exception) {
-            stateService.markSubmissionFailed(
-                    prepared.summaryJobId(),
+            stateService.markAttemptFailed(
+                    prepared,
                     exception.reason(),
                     exception.retryable(),
                     LocalDateTime.now(KST_CLOCK));
             return;
         } catch (RuntimeException exception) {
-            stateService.markSubmissionFailed(
-                    prepared.summaryJobId(),
+            stateService.markAttemptFailed(
+                    prepared,
                     CustomerAiConsultationSummaryClientException.Reason.DEPENDENCY_UNAVAILABLE,
                     true,
                     LocalDateTime.now(KST_CLOCK));

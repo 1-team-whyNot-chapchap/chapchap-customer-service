@@ -19,9 +19,16 @@ import java.util.concurrent.ConcurrentHashMap;
 @RequiredArgsConstructor
 public class CustomerNotificationSseService {
     private final CurrentAccountVerifier verifier;
-    private final ConcurrentHashMap<Long, Set<Lease>> emittersByUserId = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<GatewayUserPrincipal, Set<Lease>> emittersByUserId = new ConcurrentHashMap<>();
 
     public SseEmitter connect(Long userId, long expiresAt) {
+        return connect(new GatewayUserPrincipal(userId.toString(), RolePolicy.CUSTOMER), expiresAt);
+    }
+
+    public SseEmitter connect(GatewayUserPrincipal userId, long expiresAt) {
+        if (userId == null || !Set.of(RolePolicy.CUSTOMER, RolePolicy.RIDER, RolePolicy.ADMIN).contains(userId.role()))
+            throw new AccessDeniedException("알림 수신 권한이 없습니다.");
+        verifier.verify(userId);
         long ttl = Math.min(120_000L, expiresAt * 1000L - System.currentTimeMillis());
         if (ttl <= 0) throw new AccessDeniedException("알림 인증이 만료되었습니다.");
         SseEmitter emitter = new SseEmitter(ttl);
@@ -36,9 +43,17 @@ public class CustomerNotificationSseService {
     }
 
     public void publish(Long userId, NotificationResponse notification) {
-        if (!verifyUser(userId)) return;
-        emittersByUserId.getOrDefault(userId, Set.of()).forEach(lease ->
-                send(userId, lease, SseEmitter.event().name("notification").data(notification)));
+        publish(RolePolicy.CUSTOMER, userId, notification);
+    }
+
+    public void publish(RolePolicy role, Long recipientUserId, NotificationResponse notification) {
+        emittersByUserId.keySet().forEach(principal -> {
+            if (principal.role() != role) return;
+            if (role != RolePolicy.ADMIN && !principal.userId().equals(String.valueOf(recipientUserId))) return;
+            if (!verifyUser(principal)) return;
+            emittersByUserId.getOrDefault(principal, Set.of()).forEach(lease ->
+                    send(principal, lease, SseEmitter.event().name("notification").data(notification)));
+        });
     }
 
     @Scheduled(fixedDelay = 15000)
@@ -48,9 +63,9 @@ public class CustomerNotificationSseService {
         });
     }
 
-    private boolean verifyUser(Long userId) {
+    private boolean verifyUser(GatewayUserPrincipal userId) {
         if (!emittersByUserId.containsKey(userId)) return false;
-        try { verifier.verify(new GatewayUserPrincipal(userId.toString(), RolePolicy.CUSTOMER)); return true; }
+        try { verifier.verify(userId); return true; }
         catch (RuntimeException exception) {
             var leases = emittersByUserId.remove(userId);
             if (leases != null) leases.forEach(lease -> lease.emitter().complete());
@@ -58,7 +73,7 @@ public class CustomerNotificationSseService {
         }
     }
 
-    private void send(Long userId, Lease lease, SseEmitter.SseEventBuilder event) {
+    private void send(GatewayUserPrincipal userId, Lease lease, SseEmitter.SseEventBuilder event) {
         try {
             if (lease.expiresAt() <= Instant.now().getEpochSecond()) throw new IllegalStateException("expired");
             lease.emitter().send(event);
@@ -67,7 +82,7 @@ public class CustomerNotificationSseService {
         }
     }
 
-    private void remove(Long userId, Lease lease) {
+    private void remove(GatewayUserPrincipal userId, Lease lease) {
         emittersByUserId.computeIfPresent(userId, (ignored, leases) -> {
             leases.remove(lease); return leases.isEmpty() ? null : leases;
         });

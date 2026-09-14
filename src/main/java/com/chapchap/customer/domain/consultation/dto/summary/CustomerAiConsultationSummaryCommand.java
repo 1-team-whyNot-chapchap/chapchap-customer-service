@@ -21,8 +21,8 @@ public record CustomerAiConsultationSummaryCommand(
         if (summaryJobId <= 0 || consultationId <= 0) {
             throw new IllegalArgumentException("Summary job identity must be positive.");
         }
-        if (consultationStatus != ConsultationStatus.CLOSED) {
-            throw new IllegalArgumentException("Consultation must be CLOSED before summary submission.");
+        if (consultationStatus == null || consultationStatus == ConsultationStatus.AI_HANDLING) {
+            throw new IllegalArgumentException("Consultation must be handed off or CLOSED before summary submission.");
         }
         Objects.requireNonNull(messages, "messages must not be null.");
         if (messages.isEmpty() || messages.size() > MAX_MESSAGES) {
