@@ -35,6 +35,7 @@ import java.util.UUID;
         havingValue = "true"
 )
 public class KnowledgeAsyncProcessingStateService {
+
     private final KnowledgeDocumentRepository knowledgeDocumentRepository;
     private final KnowledgeVersionRepository knowledgeVersionRepository;
     private final KnowledgeProcessingJobRepository jobRepository;
@@ -48,59 +49,98 @@ public class KnowledgeAsyncProcessingStateService {
             UUID requestId,
             LocalDateTime now
     ) {
-        KnowledgeVersion version = knowledgeVersionRepository.findByIdForUpdate(knowledgeVersionId)
+        /*
+         * Lock 순서를 Callback 처리와 맞춘다.
+         *
+         * 기존:
+         * KnowledgeVersion -> KnowledgeProcessingJob
+         *
+         * 변경:
+         * KnowledgeProcessingJob -> KnowledgeVersion
+         *
+         * 첫 처리에서는 Job이 아직 존재하지 않을 수 있으므로
+         * 조회 결과만 먼저 확보하고, Version 조회 후 Job을 생성한다.
+         */
+        Optional<KnowledgeProcessingJob> lockedJob =
+                jobRepository.findByKnowledgeVersionIdForUpdate(knowledgeVersionId);
+
+        KnowledgeVersion version = knowledgeVersionRepository
+                .findByIdForUpdate(knowledgeVersionId)
                 .orElseThrow(() -> new KnowledgeProcessingStateException(
                         "Knowledge Version을 찾을 수 없습니다."));
+
         if (version.getProcessingStatus()
                 == com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus.READY
                 || version.getProcessingStatus()
                 == com.chapchap.customer.domain.knowledge.constant.KnowledgeProcessingStatus.FAILED) {
             return Optional.empty();
         }
-        KnowledgeDocument document = knowledgeDocumentRepository.findById(version.getKnowledgeDocumentId())
+
+        KnowledgeDocument document = knowledgeDocumentRepository
+                .findById(version.getKnowledgeDocumentId())
                 .orElseThrow(() -> new KnowledgeProcessingStateException(
                         "Knowledge 문서를 찾을 수 없습니다."));
 
         version.startProcessing(now);
         int attemptNumber = version.getProcessingAttemptCount();
-        KnowledgeProcessingJob job = jobRepository
-                .findByKnowledgeVersionIdForUpdate(knowledgeVersionId)
-                .orElseGet(() -> jobRepository.saveAndFlush(KnowledgeProcessingJob.create(
-                        knowledgeVersionId, version.getChunkProfile(), now)));
+
+        KnowledgeProcessingJob job = lockedJob
+                .orElseGet(() -> jobRepository.saveAndFlush(
+                        KnowledgeProcessingJob.create(
+                                knowledgeVersionId,
+                                version.getChunkProfile(),
+                                now
+                        )
+                ));
 
         if (attemptNumber > 1) {
             KnowledgeProcessingAttempt previousAttempt = attemptRepository
                     .findCurrentForUpdate(job.getId(), job.getCurrentAttempt())
                     .orElseThrow(() -> new KnowledgeProcessingStateException(
                             "이전 Knowledge 처리 attempt를 찾을 수 없습니다."));
+
             previousAttempt.markSuperseded(now);
             job.beginAttempt(attemptNumber, now);
+
         } else if (job.getCurrentAttempt() != 1) {
-            throw new KnowledgeProcessingStateException("Knowledge 처리 Job attempt가 충돌합니다.");
+            throw new KnowledgeProcessingStateException(
+                    "Knowledge 처리 Job attempt가 충돌합니다.");
         }
 
-        attemptRepository.save(KnowledgeProcessingAttempt.create(
-                job.getId(), attemptNumber, requestId, now));
-        return Optional.of(new PreparedKnowledgeProcessingAttempt(
-                requestId,
-                new KnowledgeProcessingContext(
-                        version.getId(),
+        attemptRepository.save(
+                KnowledgeProcessingAttempt.create(
+                        job.getId(),
                         attemptNumber,
-                        version.getObjectKey(),
-                        version.getContentType(),
-                        version.getFileSize(),
-                        document.getDocumentKey(),
-                        document.getSourceService(),
-                        document.getCategory(),
-                        version.getVersion(),
-                        version.getEffectiveFrom(),
-                        version.getChunkProfile()
+                        requestId,
+                        now
                 )
-        ));
+        );
+
+        return Optional.of(
+                new PreparedKnowledgeProcessingAttempt(
+                        requestId,
+                        new KnowledgeProcessingContext(
+                                version.getId(),
+                                attemptNumber,
+                                version.getObjectKey(),
+                                version.getContentType(),
+                                version.getFileSize(),
+                                document.getDocumentKey(),
+                                document.getSourceService(),
+                                document.getCategory(),
+                                version.getVersion(),
+                                version.getEffectiveFrom(),
+                                version.getChunkProfile()
+                        )
+                )
+        );
     }
 
     @Transactional
-    public void markSubmitted(UUID requestId, LocalDateTime now) {
+    public void markSubmitted(
+            UUID requestId,
+            LocalDateTime now
+    ) {
         KnowledgeProcessingAttempt attempt = requireAttempt(requestId);
         lockCurrentJob(attempt);
         attempt.markSubmitted(now);
@@ -114,9 +154,12 @@ public class KnowledgeAsyncProcessingStateService {
     ) {
         KnowledgeProcessingAttempt attempt = requireAttempt(requestId);
         KnowledgeProcessingJob job = lockCurrentJob(attempt);
+
         if (job.getKnowledgeVersionId() != accepted.knowledgeVersionId()) {
-            throw new KnowledgeProcessingStateException("Customer-AI 수락 응답의 Knowledge Version이 충돌합니다.");
+            throw new KnowledgeProcessingStateException(
+                    "Customer-AI 수락 응답의 Knowledge Version이 충돌합니다.");
         }
+
         job.bindProcessingId(accepted.processingId(), now);
         attempt.markAccepted(now);
     }
@@ -130,9 +173,11 @@ public class KnowledgeAsyncProcessingStateService {
     ) {
         KnowledgeProcessingAttempt attempt = requireAttempt(requestId);
         KnowledgeProcessingJob job = lockCurrentJob(attempt);
+
         if (attempt.getStatus() == KnowledgeProcessingAttemptStatus.TERMINAL) {
             return;
         }
+
         attempt.markSubmissionFailed(now);
         job.markSubmissionFailed(reason.name(), retryable, now);
 
@@ -140,11 +185,17 @@ public class KnowledgeAsyncProcessingStateService {
                 .findByIdForUpdate(job.getKnowledgeVersionId())
                 .orElseThrow(() -> new KnowledgeProcessingStateException(
                         "Knowledge Version을 찾을 수 없습니다."));
+
         if (retryable && job.getCurrentAttempt() < 3) {
-            eventPublisher.publishEvent(new KnowledgeProcessingRetryRequestedEvent(
-                    version.getId(), job.getCurrentAttempt()));
+            eventPublisher.publishEvent(
+                    new KnowledgeProcessingRetryRequestedEvent(
+                            version.getId(),
+                            job.getCurrentAttempt()
+                    )
+            );
             return;
         }
+
         version.failProcessing(reason.name(), retryable, now);
         auditLogWriter.recordKnowledgeProcessingFailed(version, now);
     }
@@ -155,13 +206,19 @@ public class KnowledgeAsyncProcessingStateService {
                         "Knowledge 처리 attempt를 찾을 수 없습니다."));
     }
 
-    private KnowledgeProcessingJob lockCurrentJob(KnowledgeProcessingAttempt attempt) {
-        KnowledgeProcessingJob job = jobRepository.findByIdForUpdate(attempt.getKnowledgeProcessingJobId())
+    private KnowledgeProcessingJob lockCurrentJob(
+            KnowledgeProcessingAttempt attempt
+    ) {
+        KnowledgeProcessingJob job = jobRepository
+                .findByIdForUpdate(attempt.getKnowledgeProcessingJobId())
                 .orElseThrow(() -> new KnowledgeProcessingStateException(
                         "Knowledge 처리 Job을 찾을 수 없습니다."));
+
         if (job.getCurrentAttempt() != attempt.getAttempt()) {
-            throw new KnowledgeProcessingStateException("현재 Knowledge 처리 attempt가 아닙니다.");
+            throw new KnowledgeProcessingStateException(
+                    "현재 Knowledge 처리 attempt가 아닙니다.");
         }
+
         return job;
     }
 }
