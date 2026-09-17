@@ -1,15 +1,13 @@
 package com.chapchap.customer.domain.customerai.service.observability;
 
 import com.chapchap.customer.domain.customerai.dto.observability.CustomerAiDiagnosticEvent;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.slf4j.spi.LoggingEventBuilder;
-
 import java.util.Objects;
 
 public final class LoggingCustomerAiDiagnosticSink implements CustomerAiDiagnosticSink {
-
     private final Logger logger;
 
     public LoggingCustomerAiDiagnosticSink() {
@@ -17,15 +15,12 @@ public final class LoggingCustomerAiDiagnosticSink implements CustomerAiDiagnost
     }
 
     LoggingCustomerAiDiagnosticSink(Logger logger) {
-
         this.logger = Objects.requireNonNull(logger);
     }
 
     @Override
     public void emit(CustomerAiDiagnosticEvent event) {
-        CustomerAiDiagnosticEvent diagnosticEvent = Objects.requireNonNull(event);
-        writeStructuredLog(diagnosticEvent);
-
+        writeStructuredLog(Objects.requireNonNull(event));
     }
 
     private void writeStructuredLog(CustomerAiDiagnosticEvent event) {
@@ -33,7 +28,12 @@ public final class LoggingCustomerAiDiagnosticSink implements CustomerAiDiagnost
                 .addKeyValue("eventType", event.eventType().name())
                 .addKeyValue("outcome", event.outcome().name())
                 .addKeyValue("requestId", event.requestId());
-        addIfPresent(entry, "traceId", event.traceId());
+
+        // Logstash 형식은 MDC 값을 이미 JSON에 넣는다. 같은 키를 두 번 쓰지 않는다.
+        // MDC가 없는 작업에서 이벤트가 traceId를 갖는 경우에는 그 값을 보존한다.
+        if (MDC.get("traceId") == null) {
+            addIfPresent(entry, "traceId", event.traceId());
+        }
         addIfPresent(entry, "consultationId", event.consultationId());
         addIfPresent(entry, "knowledgeVersionId", event.knowledgeVersionId());
         addIfPresent(entry, "processingId", event.processingId());
@@ -59,5 +59,4 @@ public final class LoggingCustomerAiDiagnosticSink implements CustomerAiDiagnost
     private String nameOf(Enum<?> value) {
         return value == null ? null : value.name();
     }
-
 }
