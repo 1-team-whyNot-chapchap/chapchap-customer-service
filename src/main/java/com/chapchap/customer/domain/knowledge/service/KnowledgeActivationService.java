@@ -29,10 +29,10 @@ public class KnowledgeActivationService {
             return false;
         }
 
-        KnowledgeDocument document = knowledgeDocumentRepository.findById(target.getKnowledgeDocumentId())
+        KnowledgeDocument document = knowledgeDocumentRepository.findByIdForUpdate(target.getKnowledgeDocumentId())
                 .orElseThrow(() -> new KnowledgeProcessingStateException("Knowledge 문서를 찾을 수 없습니다."));
 
-        KnowledgeVersion lockedTarget = knowledgeVersionRepository.findById(target.getId())
+        KnowledgeVersion lockedTarget = knowledgeVersionRepository.findByIdForUpdate(target.getId())
                 .orElseThrow(() -> new KnowledgeProcessingStateException("Knowledge Version을 찾을 수 없습니다."));
         if (!lockedTarget.canActivateAt(now)) {
             return false;
