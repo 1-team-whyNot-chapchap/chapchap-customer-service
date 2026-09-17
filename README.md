@@ -11,7 +11,7 @@ JDK 21을 사용한다. 저장소 루트를 작업 디렉터리로 설정하고,
 ./gradlew.bat bootRun
 ```
 
-기본 주소는 `http://localhost:8084`다. APP_PORT를 설정했다면 해당 포트를 사용한다.
+기본 주소는 `http://localhost:8084`다. APP_PORT를 설정했다면 해당 포트를 사용한다..
 
 ## 필요한 의존성
 
