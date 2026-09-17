@@ -15,10 +15,10 @@ public interface KnowledgeDocumentRepository extends JpaRepository<KnowledgeDocu
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<KnowledgeDocument> findById(Long knowledgeDocumentId);
 
-    Optional<KnowledgeDocument> findBySourceServiceDocument(
-        String sourceService,
-        String documentKey
-    );
+    // Optional<KnowledgeDocument> findBySourceServiceDocument(
+    //     String sourceService,
+    //     String documentKey
+    // );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
